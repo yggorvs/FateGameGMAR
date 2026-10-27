@@ -1,0 +1,3131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Fate: Eclipse do Graal - Beta v4.2 (24 Quadros por Ação / 96-Frame Atlas)</title>
+<style>
+  :root {
+    --bg-deep: #05050b;
+    --bg-panel: rgba(11, 15, 28, 0.88);
+    --bg-card: rgba(17, 24, 43, 0.90);
+    --gold: #f5d17f;
+    --gold-bright: #fde047;
+    --crimson: #e11d48;
+    --crimson-glow: rgba(225, 29, 72, 0.45);
+    --cyan: #38bdf8;
+    --cyan-glow: rgba(56, 189, 248, 0.4);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  body {
+    background: radial-gradient(circle at center, #130b24 0%, #040408 100%);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #game-container {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    max-width: 100vw;
+    max-height: 100vh;
+    aspect-ratio: 16/9;
+    border: 2px solid rgba(245, 209, 127, 0.55);
+    box-shadow: 0 0 55px rgba(225, 29, 72, 0.25), 0 0 20px rgba(245, 209, 127, 0.2);
+    background: #000;
+    overflow: hidden;
+  }
+
+  canvas { width: 100%; height: 100%; display: block; }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 50% 22%, rgba(225, 29, 72, 0.16) 0%, transparent 55%),
+      linear-gradient(180deg, rgba(6, 7, 15, 0.86) 0%, rgba(7, 9, 20, 0.96) 100%);
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    padding: 18px 30px;
+    text-align: center;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.985); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .hidden { display: none !important; }
+
+  .brand-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 4px 14px;
+    border-radius: 99px;
+    margin-bottom: 6px;
+    text-shadow: 0 0 8px var(--cyan-glow);
+  }
+
+  h1 {
+    font-size: 40px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    background: linear-gradient(180deg, #fffbeb 0%, #f5d17f 55%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 18px rgba(225, 29, 72, 0.55));
+    margin-bottom: 4px;
+  }
+
+  h2 {
+    font-size: 14px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    max-width: 980px;
+    margin-top: 8px;
+  }
+
+  .main-menu-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 26px;
+    width: 100%;
+    max-width: 1060px;
+    align-items: center;
+    margin-top: 6px;
+  }
+
+  .menu-nav-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  button {
+    position: relative;
+    background: linear-gradient(135deg, rgba(24, 34, 61, 0.95) 0%, rgba(11, 16, 32, 0.98) 100%);
+    color: var(--text-main);
+    border: 1px solid rgba(245, 209, 127, 0.45);
+    border-left: 4px solid var(--gold);
+    padding: 11px 18px;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    text-transform: uppercase;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  button .btn-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold);
+    opacity: 0.85;
+    margin-left: 10px;
+  }
+
+  button:hover {
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.85) 0%, rgba(136, 19, 55, 0.95) 100%);
+    border-color: var(--gold-bright);
+    border-left-color: #fff;
+    color: #fff;
+    transform: translateX(4px) scale(1.015);
+    box-shadow: 0 0 22px var(--crimson-glow);
+  }
+
+  button.btn-center {
+    justify-content: center;
+    text-align: center;
+    border-left-width: 1px;
+  }
+
+  button.btn-cyan {
+    border-color: rgba(56, 189, 248, 0.55);
+    border-left-color: var(--cyan);
+  }
+  button.btn-cyan:hover {
+    background: linear-gradient(135deg, rgba(14, 116, 144, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+    box-shadow: 0 0 22px var(--cyan-glow);
+  }
+
+  button.btn-primary-cta {
+    background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%);
+    border: 2px solid var(--gold-bright);
+    color: #fff;
+    font-size: 16px;
+    padding: 12px 32px;
+    justify-content: center;
+    box-shadow: 0 0 25px var(--crimson-glow);
+  }
+  button.btn-primary-cta:hover {
+    background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+    transform: scale(1.04);
+  }
+
+  .hero-showcase-panel {
+    background: var(--bg-panel);
+    border: 1px solid rgba(245, 209, 127, 0.3);
+    border-radius: 10px;
+    padding: 20px 24px;
+    text-align: left;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-showcase-panel::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--crimson), var(--gold), var(--cyan));
+  }
+
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .showcase-item {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-left: 3px solid var(--gold);
+    padding: 9px 12px;
+    border-radius: 6px;
+  }
+  .showcase-item h4 { color: var(--gold); font-size: 12.5px; text-transform: uppercase; margin-bottom: 3px; }
+  .showcase-item p { color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
+
+  .campaign-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 1040px;
+    margin: 8px 0 14px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-top: 3px solid var(--gold);
+    border-radius: 10px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .card:hover {
+    border-color: var(--gold-bright);
+    background: rgba(30, 41, 69, 0.95);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(245, 209, 127, 0.25);
+  }
+
+  .card .tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--cyan); margin-bottom: 6px; letter-spacing: 1px; }
+  .card h3 { color: var(--gold-bright); font-size: 19px; margin-bottom: 8px; }
+  .card p { font-size: 12.5px; color: #cbd5e1; line-height: 1.45; }
+
+  .vs-banner {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 1060px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .fighter-slot-panel {
+    background: var(--bg-panel);
+    border: 2px solid rgba(148, 163, 184, 0.35);
+    border-radius: 10px;
+    padding: 10px 16px;
+    text-align: left;
+    transition: 0.2s;
+  }
+  .fighter-slot-panel.active-slot { border-color: var(--gold-bright); box-shadow: 0 0 18px rgba(245, 209, 127, 0.3); }
+  .fighter-slot-panel.p2-slot.active-slot { border-color: var(--cyan); box-shadow: 0 0 18px var(--cyan-glow); }
+
+  .slot-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+  .slot-char-name { font-size: 22px; font-weight: 900; color: var(--gold-bright); text-transform: uppercase; }
+  .slot-np-badge { font-size: 11px; color: #cbd5e1; }
+
+  .stat-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+  .stat-item span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; }
+  .stat-track { height: 5px; background: #1e293b; border-radius: 3px; overflow: hidden; margin-top: 2px; }
+  .stat-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--crimson)); }
+
+  .vs-emblem { font-size: 30px; font-weight: 900; font-style: italic; color: var(--crimson); text-shadow: 0 0 15px var(--crimson-glow), 2px 2px 0 #000; }
+
+  .roster-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; width: 100%; max-width: 1060px; margin-bottom: 12px; }
+  .roster-card { background: var(--bg-card); border: 2px solid rgba(148, 163, 184, 0.3); border-radius: 8px; padding: 9px; cursor: pointer; transition: 0.16s; text-align: center; }
+  .roster-card:hover { border-color: var(--gold-bright); transform: translateY(-3px); }
+  .roster-card.p1-picked { border-color: var(--gold-bright); box-shadow: 0 0 14px rgba(245, 209, 127, 0.45); }
+  .roster-card.p2-picked { border-color: var(--cyan); box-shadow: 0 0 14px var(--cyan-glow); }
+
+  .avatar-swatch { width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 6px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; color: #fff; text-shadow: 1px 1px 3px #000; }
+  .roster-card h4 { font-size: 14px; color: #fff; margin-bottom: 2px; }
+  .roster-card p { font-size: 10.5px; color: var(--text-muted); line-height: 1.2; height: 38px; overflow: hidden; }
+
+  .mode-options-bar { display: flex; gap: 10px; align-items: center; justify-content: center; margin-bottom: 8px; background: rgba(15, 23, 42, 0.8); padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.25); }
+
+  #controls-bar {
+    position: absolute;
+    bottom: 6px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between;
+    font-size: 11.5px; color: #e2e8f0;
+    background: rgba(6, 9, 19, 0.82);
+    backdrop-filter: blur(4px);
+    padding: 6px 14px; border-radius: 6px;
+    pointer-events: none; z-index: 5;
+    border: 1px solid rgba(245, 209, 127, 0.3);
+  }
+
+  .dialog-box { background: var(--bg-panel); border: 2px solid var(--gold); box-shadow: 0 0 40px rgba(0, 0, 0, 0.85); padding: 26px; border-radius: 10px; max-width: 820px; width: 92%; }
+  .dialog-speaker { color: var(--gold-bright); font-size: 21px; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; text-align: left; border-bottom: 1px solid rgba(245, 209, 127, 0.25); padding-bottom: 5px; }
+  .dialog-text { color: #f1f5f9; font-size: 16px; line-height: 1.55; margin-bottom: 18px; text-align: left; white-space: pre-line; }
+
+  .sprite-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 1080px; margin-top: 4px; }
+  .sprite-slot { background: var(--bg-card); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .sprite-slot h4 { color: var(--gold-bright); font-size: 13.5px; text-transform: uppercase; display: flex; justify-content: space-between; width: 100%; }
+  .sprite-slot span { font-size: 10px; color: var(--text-muted); }
+  .preview-strip { display: flex; gap: 3px; height: 50px; align-items: center; justify-content: center; background: #04050a; width: 100%; border-radius: 4px; overflow: hidden; padding: 2px; border: 1px solid #1e293b; }
+  .preview-strip canvas { width: 42px; height: 42px; object-fit: contain; }
+  .slot-btn-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; width: 100%; }
+  .calib-row { display: flex; gap: 6px; align-items: center; width: 100%; font-size: 10px; color: #cbd5e1; justify-content: space-between; }
+  .calib-row input[type=range] { width: 62px; accent-color: var(--gold); cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+  <!-- MENU PRINCIPAL -->
+  <div id="menu-main" class="overlay">
+    <div class="brand-badge">Unreal 2.5D Fighter Prototype • v4.2 Cinema 24-Frames/Action Engine</div>
+    <h1>FATE: ECLIPSE DO GRAAL</h1>
+    <h2>Duelos 1 vs 1 em Fuyuki sob a Anomalia do Eclipse</h2>
+
+    <div class="main-menu-layout">
+      <div class="menu-nav-stack">
+        <button onclick="openCampaignSelect()">
+          <span>Modo Campanha</span>
+          <span class="btn-sub">3 Histórias</span>
+        </button>
+        <button onclick="openCharSelect('versus')">
+          <span>Versus Local (1 vs 1)</span>
+          <span class="btn-sub">CPU / 2J</span>
+        </button>
+        <button onclick="openCharSelect('training')">
+          <span>Modo de Treino</span>
+          <span class="btn-sub">Livre</span>
+        </button>
+        <button class="btn-cyan" onclick="openSpriteManager()">
+          <span>Estúdio de Sprites (24 Quadros/Ação)</span>
+          <span class="btn-sub">96 Frames</span>
+        </button>
+        <button onclick="toggleFluidInterpolation()" id="btn-interp">
+          <span>Interpolação 24->60 FPS</span>
+          <span class="btn-sub" id="lbl-interp-state">ATIVADA</span>
+        </button>
+        <button onclick="toggleVisualSettings()" id="btn-fx">
+          <span>Flashes / Tremor</span>
+          <span class="btn-sub" id="lbl-fx-state">ATIVADO</span>
+        </button>
+      </div>
+
+      <div class="hero-showcase-panel">
+        <div style="font-size:12px; font-weight:800; color:var(--cyan); letter-spacing:2px; text-transform:uppercase;">
+          Atualização v4.2 • Mínimo de 24 Quadros Reais para Cada Ação
+        </div>
+        <h3 style="font-size:21px; color:var(--gold-bright); margin: 4px 0 8px;">
+          Matriz de 96 Quadros por Servo (4 Ações × 24 Quadros)
+        </h3>
+        <p style="font-size:12.5px; color:#cbd5e1; line-height:1.45;">
+          Todas as ações do jogo — <b>Postura Base (Idle)</b>, <b>Avanço/Corrida</b>, <b>Combate/Ataques</b> e <b>Defesa/Especiais</b> — agora possuem <b>24 quadros individuais renderizados em cache</b>. Quando você importa uma folha externa 4×4, o motor também expande e gera automaticamente os <b>24 quadros por linha</b>!
+        </p>
+
+        <div class="showcase-grid">
+          <div class="showcase-item">
+            <h4>24 Quadros de Idle & Respiração</h4>
+            <p>Ciclo de 24 poses com respiração progressiva, oscilação de arma e física contínua de capas e cabelos.</p>
+          </div>
+          <div class="showcase-item">
+            <h4>24 Quadros de Corrida & Dash</h4>
+            <p>Passada completa em 24 fases com impulso, voo, contato no solo e linhas de velocidade.</p>
+          </div>
+          <div class="showcase-item">
+            <h4>24 Quadros por Linha de Ataque</h4>
+            <p>Cada golpe conta com preparação, extensão máxima com arco luminoso e retorno fluido em 24 etapas.</p>
+          </div>
+          <div class="showcase-item">
+            <h4>Exportador PNG 4×24 Integrado</h4>
+            <p>No Estúdio de Sprites, você pode baixar a folha completa de 96 quadros (`4x24`) em `.png` transparente.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELEÇÃO DE CAMPANHA -->
+  <div id="menu-campaign" class="overlay hidden">
+    <div class="brand-badge">Modo História • 5 Duelos + Chefe Eco do Graal</div>
+    <h1>CRÔNICAS DO ECLIPSE</h1>
+    <h2>Cada perspectiva revela uma verdade da anomalia e termina com uma escolha decisiva</h2>
+
+    <div class="campaign-grid">
+      <div class="card" onclick="startCampaign('Saber')">
+        <div>
+          <span class="tag">Campanha 01 • Classe Saber</span>
+          <h3>Juramento da Espada</h3>
+          <p>Proteja Shirou e os cidadãos de Fuyuki contra os ecos invocados pelo Graal. Ao derrotar o guardião, escolha entre selá-lo ou destruí-lo.</p>
+        </div>
+        <div style="margin-top:14px; font-size:12px; color:var(--gold); font-weight:700;">▶ INICIAR JORNADA COM SABER</div>
+      </div>
+
+      <div class="card" onclick="startCampaign('Archer')">
+        <div>
+          <span class="tag">Campanha 02 • Classe Archer</span>
+          <h3>Ecos do Ideal</h3>
+          <p>Investigue a repetição cíclica dos confrontos ao lado de Rin. No epicentro do ritual, decida entre romper o ciclo ou preservar um último eco.</p>
+        </div>
+        <div style="margin-top:14px; font-size:12px; color:var(--gold); font-weight:700;">▶ INICIAR JORNADA COM ARCHER</div>
+      </div>
+
+      <div class="card" onclick="startCampaign('Caster')">
+        <div>
+          <span class="tag">Campanha 03 • Classe Caster</span>
+          <h3>Contrato da Feiticeira</h3>
+          <p>Reescreva as regras do ritual em Fuyuki e liberte-se de qualquer manipulação. Ao dominar o núcleo com Rule Breaker, escolha entre usar seu poder ou desfazer o vínculo.</p>
+        </div>
+        <div style="margin-top:14px; font-size:12px; color:var(--gold); font-weight:700;">▶ INICIAR JORNADA COM CASTER</div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn-center" onclick="showMenu('menu-main')">Voltar ao Menu Principal</button>
+    </div>
+  </div>
+
+  <!-- LOBBY DE SELEÇÃO DE PERSONAGENS -->
+  <div id="menu-char" class="overlay hidden">
+    <div class="brand-badge" id="char-mode-badge">Modo Versus Local 1 vs 1</div>
+    <h1 id="char-select-title">SELECIONE OS SERVOS</h1>
+
+    <div class="mode-options-bar">
+      <span id="mode-option-label" style="font-size:13px; color:#cbd5e1; font-weight:700;">Configuração do Oponente:</span>
+      <button class="btn-center btn-cyan" style="padding:6px 14px; font-size:12px;" onclick="toggleOpponentBehavior()" id="btn-opp-toggle">
+        Oponente: CPU (IA)
+      </button>
+      <button class="btn-center" style="padding:6px 14px; font-size:12px;" onclick="switchActiveSlot()" id="btn-switch-slot">
+        Escolhendo: Jogador 1
+      </button>
+    </div>
+
+    <div class="vs-banner">
+      <div class="fighter-slot-panel active-slot" id="panel-slot-p1" onclick="setSlotStep(1)" style="cursor:pointer;">
+        <div class="slot-header">
+          <span style="color:var(--gold);">● JOGADOR 1 (VOCÊ)</span>
+          <span>Clique para alterar</span>
+        </div>
+        <div class="slot-char-name" id="p1-preview-name">Saber</div>
+        <div class="slot-np-badge" id="p1-preview-np">Nobre Fantasma: EXCALIBUR</div>
+        <div class="stat-bars">
+          <div class="stat-item"><span>Velocidade</span><div class="stat-track"><div class="stat-fill" id="p1-bar-spd" style="width:75%"></div></div></div>
+          <div class="stat-item"><span>Alcance</span><div class="stat-track"><div class="stat-fill" id="p1-bar-rng" style="width:70%"></div></div></div>
+          <div class="stat-item"><span>Dano</span><div class="stat-track"><div class="stat-fill" id="p1-bar-dmg" style="width:80%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="vs-emblem">VS</div>
+
+      <div class="fighter-slot-panel p2-slot" id="panel-slot-p2" onclick="setSlotStep(2)" style="cursor:pointer;">
+        <div class="slot-header">
+          <span style="color:var(--cyan);" id="p2-slot-title">● OPONENTE (J2 / CPU)</span>
+          <span>Clique para alterar</span>
+        </div>
+        <div class="slot-char-name" id="p2-preview-name" style="color:var(--cyan);">Lancer</div>
+        <div class="slot-np-badge" id="p2-preview-np">Nobre Fantasma: GÁE BOLG</div>
+        <div class="stat-bars">
+          <div class="stat-item"><span>Velocidade</span><div class="stat-track"><div class="stat-fill" id="p2-bar-spd" style="width:85%"></div></div></div>
+          <div class="stat-item"><span>Alcance</span><div class="stat-track"><div class="stat-fill" id="p2-bar-rng" style="width:95%"></div></div></div>
+          <div class="stat-item"><span>Dano</span><div class="stat-track"><div class="stat-fill" id="p2-bar-dmg" style="width:75%"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="roster-grid" id="char-cards"></div>
+
+    <div class="btn-group">
+      <button class="btn-primary-cta" onclick="confirmCharacterSelection()">
+        ⚔ INICIAR DUELO AGORA
+      </button>
+      <button class="btn-center" onclick="showMenu('menu-main')">
+        Voltar ao Menu
+      </button>
+    </div>
+  </div>
+
+  <!-- ESTÚDIO DE SPRITES v4.2 (24 QUADROS POR AÇÃO) -->
+  <div id="menu-sprites" class="overlay hidden">
+    <div class="brand-badge">Estúdio de Sprites v4.2 • 24 Quadros Reais por Ação (96 Quadros/Servo)</div>
+    <h1>GERENCIADOR E EXPORTADOR DE SPRITES (24 FPS)</h1>
+    <h2>Qualquer folha importada é automaticamente expandida para 24 quadros por ação (24/24/24/24)</h2>
+    <div class="sprite-grid" id="sprite-slots-container"></div>
+    <div class="btn-group" style="margin-top: 10px;">
+      <button class="btn-center" onclick="clearSavedSprites()" style="border-color:#ef4444; color:#fca5a5;">Restaurar Atlas HD de 96 Quadros</button>
+      <button class="btn-center" onclick="showMenu('menu-main')">Voltar ao Menu</button>
+    </div>
+  </div>
+
+  <!-- CAIXA DE DIÁLOGO -->
+  <div id="menu-dialog" class="overlay hidden">
+    <div class="dialog-box">
+      <div class="dialog-speaker" id="dlg-speaker">Servo</div>
+      <div class="dialog-text" id="dlg-text">...</div>
+      <div class="btn-group" id="dlg-buttons"></div>
+    </div>
+  </div>
+
+  <div id="controls-bar">
+    <span><b>J1:</b> A/D (Mover/Def.) | W (Pular) | S (Agachar) | <b>J (Leve)</b> | <b>K (Médio)</b> | <b>L (Pesado)</b> | <b>U (Especial)</b> | <b>O (EX)</b> | <b>P (Nobre Fantasma)</b> | I (Agarrão) | 1/2 (Selos)</span>
+    <span id="controls-right-info"><b>J2:</b> Setas | Num1~6 (Ataques/Especiais) | Num0 (NP) &nbsp;|&nbsp; <b>ESC:</b> Menu</span>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let fxEnabled = true;
+let fluidInterpEnabled = true;
+let gameMode = 'menu';
+let pendingMode = 'versus';
+let selectStep = 1;
+let p1Choice = 'Saber', p2Choice = 'Lancer';
+let versusP2IsHuman = false;
+let trainingDummyMode = 'idle';
+let globalTick = 0;
+
+const SERVANTS = {
+  Saber: {
+    name: 'Saber', hair: '#facc15', skin: '#fde68a', primary: '#1d4ed8', secondary: '#e2e8f0', cape: '#eff6ff',
+    weaponColor: '#fde047', weaponGlow: '#38bdf8', weaponType: 'sword', scale: 1.0,
+    speed: 6.3, range: 112, dmgMult: 1.0,
+    specialName: 'STRIKE AIR', exName: 'INVISIBLE AIR: TEMPESTADE', npName: 'EXCALIBUR',
+    desc: 'Equilibrada; espada, avanço e Excalibur frontal.'
+  },
+  Archer: {
+    name: 'Archer', hair: '#f1f5f9', skin: '#d6b49a', primary: '#b91c1c', secondary: '#1e293b', cape: '#991b1b',
+    weaponColor: '#e2e8f0', weaponGlow: '#ef4444', weaponType: 'dual', scale: 1.03,
+    speed: 5.9, range: 115, dmgMult: 0.95,
+    specialName: 'KANSHOU & BAKUYA', exName: 'CALADBOLG II', npName: 'UNLIMITED BLADE WORKS',
+    desc: 'Versátil; alterna lâminas gêmeas e projéteis.'
+  },
+  Lancer: {
+    name: 'Lancer', hair: '#2563eb', skin: '#fde68a', primary: '#1e3a8a', secondary: '#94a3b8', cape: null,
+    weaponColor: '#dc2626', weaponGlow: '#f87171', weaponType: 'spear', scale: 1.04,
+    speed: 6.9, range: 155, dmgMult: 0.95,
+    specialName: 'ESTOCADA RELÂMPAGO', exName: 'PERFURAÇÃO CARMESIM', npName: 'GÁE BOLG',
+    desc: 'Controle de distância com a lança rubra.'
+  },
+  Rider: {
+    name: 'Rider', hair: '#a855f7', skin: '#fef3c7', primary: '#111827', secondary: '#c084fc', cape: '#4c1d95',
+    weaponColor: '#d8b4fe', weaponGlow: '#f472b6', weaponType: 'dagger', scale: 0.98,
+    speed: 7.9, range: 100, dmgMult: 0.9,
+    specialName: 'CORRENTE DE ANDRÔMEDA', exName: 'VÓRTICE DE GÓRGONA', npName: 'BELLEROPHON',
+    desc: 'Alta mobilidade, pressão rápida e Bellerophon.'
+  },
+  Caster: {
+    name: 'Caster', hair: '#6b21a8', skin: '#f3e8ff', primary: '#3b0764', secondary: '#c084fc', cape: '#581c87',
+    weaponColor: '#c084fc', weaponGlow: '#38bdf8', weaponType: 'staff', scale: 1.0,
+    speed: 5.1, range: 120, dmgMult: 0.9,
+    specialName: 'ATLAS DE HECATE', exName: 'RULE BREAKER (DRENO)', npName: 'RULE BREAKER: SUPREMACIA',
+    desc: 'Magia à distância. Rule Breaker drena 1 mana.'
+  },
+  Berserker: {
+    name: 'Berserker', hair: '#1e293b', skin: '#64748b', primary: '#334155', secondary: '#ca8a04', cape: null,
+    weaponColor: '#475569', weaponGlow: '#ef4444', weaponType: 'greataxe', scale: 1.22,
+    speed: 4.5, range: 122, dmgMult: 1.30,
+    specialName: 'FENDA SÍSMICA', exName: 'RUGIDO DE HÉRCULES', npName: 'NINE LIVES',
+    desc: 'Alto dano e armadura de impacto nos pesados.'
+  },
+  Eco: {
+    name: 'Eco do Graal', hair: '#f59e0b', skin: '#94a3b8', primary: '#0f172a', secondary: '#dc2626', cape: '#450a0a',
+    weaponColor: '#f59e0b', weaponGlow: '#ef4444', weaponType: 'sword', scale: 1.08,
+    speed: 6.5, range: 120, dmgMult: 1.15,
+    specialName: 'PULSO DE LAMA NEGRA', exName: 'ERUPÇÃO DO GRAAL', npName: 'CONVERGÊNCIA DO ECLIPSE',
+    desc: 'Chefe original que alterna estilos do elenco.'
+  }
+};
+
+// ============================================================================
+// MOTOR v4.2: MÍNIMO DE 24 QUADROS POR AÇÃO (96 QUADROS POR PERSONAGEM)
+// ============================================================================
+const ALL_KEYS = ['Saber', 'Lancer', 'Archer', 'Rider', 'Caster', 'Berserker', 'Eco'];
+const PLAYABLE_KEYS = ['Saber', 'Lancer', 'Archer', 'Rider', 'Caster', 'Berserker'];
+
+const MIN_FRAMES_PER_ACTION = 24; // Exigência v4.2: No mínimo 24 quadros reais por ação!
+const preBakedAtlas = {};         // 4 ações x 24 quadros = 96 quadros HD nativos por Servo
+const spriteAtlas = {};           // Folha Base/Mestra expandida para 24 quadros por linha
+const attackSpriteAtlas = {};     // Folha de Ataques expandida para 24 quadros por linha
+const rawSheetCache = {};
+
+const charCalib = {};
+ALL_KEYS.forEach(k => {
+  charCalib[k] = { mode: 'grid4x4', scale: 1.0, offX: 0, offY: 0 };
+});
+
+const FRAME_W = 560;
+const FRAME_H = 320;
+const PIVOT_X = 225;
+const FOOT_Y  = 292;
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function easeInOutSine(t) { return -(Math.cos(Math.PI * t) - 1) / 2; }
+
+// 1. GERA 24 QUADROS POR AÇÃO (96 QUADROS POR SERVO) NO ATLAS NATIVO HD
+function buildAllPreBakedAtlases() {
+  ALL_KEYS.forEach(key => {
+    const s = SERVANTS[key];
+    const rows = [[], [], [], []];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < MIN_FRAMES_PER_ACTION; c++) {
+        rows[r].push(bakeFluidHDFrame24(key, s, r, c, MIN_FRAMES_PER_ACTION));
+      }
+    }
+    preBakedAtlas[key] = rows;
+  });
+}
+
+function bakeFluidHDFrame24(charKey, s, rowIdx, colIdx, totalCols) {
+  const temp = document.createElement('canvas');
+  temp.width = FRAME_W;
+  temp.height = FRAME_H;
+  const tc = temp.getContext('2d');
+
+  const bodyLayer = document.createElement('canvas');
+  bodyLayer.width = FRAME_W;
+  bodyLayer.height = FRAME_H;
+  const bc = bodyLayer.getContext('2d');
+
+  bc.save();
+  bc.translate(PIVOT_X, FOOT_Y);
+
+  const normT = colIdx / totalCols; // 0.0 -> 1.0 ao longo dos 24 quadros
+  const phase = normT * Math.PI * 2;
+  let breath = 0, walk = 0, bodyLean = 0, hipY = -74, armRot = -0.35, armX = 24, armY = 6;
+  let slashArc = null;
+
+  if (rowIdx === 0) {
+    // AÇÃO 0 (IDLE): 24 quadros de respiração progressiva, micro-balanço de guarda e vento na capa
+    breath = Math.sin(phase) * 3.5;
+    bodyLean = Math.cos(phase) * 0.03;
+    hipY = -74 + breath;
+    armRot = -0.32 + Math.sin(phase - 0.5) * 0.09;
+    armX = 24 + Math.cos(phase) * 2.5;
+  } else if (rowIdx === 1) {
+    // AÇÃO 1 (CORRIDA / DASH): 24 quadros de ciclo de passada completo
+    walk = Math.sin(phase);
+    const bounce = Math.abs(Math.cos(phase)) * 5.0;
+    bodyLean = 0.20 + Math.sin(phase * 2) * 0.025;
+    hipY = -70 - bounce;
+    armRot = -0.60 + walk * 0.36;
+  } else if (rowIdx === 2) {
+    // AÇÃO 2 (ATAQUES LEVE, MÉDIO, PESADO E ESPECIAL): 24 quadros (6 sub-quadros dedicados por golpe!)
+    const atkGroup = Math.floor(colIdx / 6); // 0=Leve (0..5), 1=Médio (6..11), 2=Pesado (12..17), 3=Especial (18..23)
+    const subP = (colIdx % 6) / 5;           // 0.0 -> 1.0 dentro dos 6 quadros daquele golpe
+    const swing = Math.sin(subP * Math.PI);  // Curva de extensão do golpe
+
+    if (atkGroup === 0) {
+      // Ataque Leve (6 quadros)
+      bodyLean = -0.05 + swing * 0.24;
+      armRot   = -0.65 + easeOutCubic(subP) * 0.85;
+      armX     = 24 + swing * 18;
+      if (subP >= 0.25 && subP <= 0.85) {
+        slashArc = { color: s.weaponColor, width: 13 * swing, r: 88, a1: -0.6 + subP * 0.3, a2: 0.65 + subP * 0.3 };
+      }
+    } else if (atkGroup === 1) {
+      // Ataque Médio (6 quadros)
+      bodyLean = -0.14 + easeOutCubic(subP) * 0.42;
+      armRot   = -1.25 + easeOutCubic(subP) * 1.65;
+      armX     = 26 + swing * 20;
+      if (subP >= 0.20 && subP <= 0.90) {
+        slashArc = { color: s.weaponGlow, width: 17 * swing, r: 108, a1: -1.1 + subP * 0.4, a2: 0.95 + subP * 0.3 };
+      }
+    } else if (atkGroup === 2) {
+      // Ataque Pesado Overhead (6 quadros)
+      bodyLean = subP < 0.35 ? (-0.24 * (subP / 0.35)) : (0.36 * ((subP - 0.35) / 0.65));
+      armRot   = subP < 0.35 ? (-2.15) : (-2.15 + easeOutCubic((subP - 0.35) / 0.65) * 2.85);
+      armX     = 28 + swing * 18;
+      if (subP >= 0.35) {
+        slashArc = { color: s.weaponGlow, width: 22 * swing, r: 124, a1: -1.5, a2: 1.15 };
+      }
+    } else {
+      // Ataque Especial / Nobre Fantasma (6 quadros)
+      bodyLean = subP < 0.25 ? -0.18 : 0.28;
+      armRot   = subP < 0.25 ? -1.60 : 0.0;
+      armX     = 26 + swing * 24;
+      if (subP >= 0.25) {
+        slashArc = { color: '#fde047', width: 26 * swing, r: 140, a1: -1.3, a2: 1.3 };
+      }
+    }
+  } else {
+    // AÇÃO 3 (DEFESA / HITSTUN / CARGA DE MANA): 24 quadros
+    const isHitPose = colIdx >= 12;
+    bodyLean = (isHitPose ? -0.22 : -0.08) + Math.sin(phase * 2) * 0.02;
+    hipY = -70 + Math.sin(phase) * 2.0;
+    armRot = (isHitPose ? -1.15 : -0.95) + Math.cos(phase) * 0.05;
+  }
+
+  // 1. Capa com onda de 24 fases
+  if (s.cape) {
+    const wave = (rowIdx === 1 || rowIdx === 2)
+      ? -22 + Math.sin(phase * 2) * 7
+      : -8 + Math.sin(phase - 0.8) * 8;
+    bc.fillStyle = s.cape;
+    bc.beginPath();
+    bc.moveTo(-10, hipY - 42);
+    bc.quadraticCurveTo(-44 + wave, hipY - 8, -36 + wave * 1.25, -10);
+    bc.lineTo(-4, -22);
+    bc.closePath();
+    bc.fill();
+  }
+
+  // 2. Pernas ancoradas em FOOT_Y
+  bc.lineCap = 'round';
+  bc.lineWidth = 15;
+  bc.strokeStyle = s.secondary;
+  bc.beginPath();
+  bc.moveTo(-8, hipY + 4);
+  bc.lineTo(-16 + walk * 24, -4);
+  bc.moveTo(8, hipY + 4);
+  bc.lineTo(16 - walk * 24, -4);
+  bc.stroke();
+
+  bc.lineWidth = 16;
+  bc.strokeStyle = s.primary;
+  bc.beginPath();
+  bc.moveTo(-13 + walk * 15, -26);
+  bc.lineTo(-16 + walk * 24, -4);
+  bc.moveTo(13 - walk * 15, -26);
+  bc.lineTo(16 - walk * 24, -4);
+  bc.stroke();
+
+  // 3. Tronco
+  bc.save();
+  bc.translate(0, hipY);
+  bc.rotate(bodyLean);
+
+  if (charKey === 'Saber' || charKey === 'Caster' || charKey === 'Berserker') {
+    bc.fillStyle = s.primary;
+    bc.beginPath();
+    bc.moveTo(-20, -6); bc.lineTo(20, -6); bc.lineTo(28, 36); bc.lineTo(-26, 36);
+    bc.closePath(); bc.fill();
+    bc.fillStyle = s.secondary;
+    bc.fillRect(-10, -4, 20, 36);
+  }
+
+  bc.fillStyle = s.primary;
+  bc.beginPath();
+  bc.roundRect(-18, -52, 36, 54, 7);
+  bc.fill();
+
+  bc.fillStyle = 'rgba(0,0,0,0.28)';
+  bc.fillRect(-17, -50, 13, 50);
+
+  bc.fillStyle = s.secondary;
+  bc.beginPath();
+  bc.moveTo(-16, -48); bc.lineTo(16, -48); bc.lineTo(11, -20); bc.lineTo(-11, -20);
+  bc.closePath(); bc.fill();
+
+  // 4. Cabeça e Cabelo com 24 fases
+  bc.save();
+  bc.translate(2, -67);
+  if (charKey === 'Rider' || charKey === 'Berserker') {
+    const hairWave = Math.sin(phase - 0.6) * 6;
+    bc.fillStyle = s.hair;
+    bc.beginPath();
+    bc.moveTo(-14, -10);
+    bc.quadraticCurveTo(-48 + hairWave, 18, -38 + hairWave * 1.3, 62);
+    bc.lineTo(-10, 28);
+    bc.closePath(); bc.fill();
+  }
+  bc.fillStyle = s.skin;
+  bc.beginPath(); bc.arc(0, 0, 15, 0, Math.PI * 2); bc.fill();
+
+  if (charKey === 'Rider') {
+    bc.fillStyle = '#e2e8f0';
+    bc.fillRect(0, -6, 15, 7);
+  } else {
+    bc.fillStyle = '#000';
+    bc.fillRect(5, -4, 6, 4);
+  }
+
+  bc.fillStyle = s.hair;
+  bc.beginPath();
+  bc.arc(-2, -4, 16, Math.PI * 0.85, Math.PI * 2.15);
+  bc.lineTo(14, 4); bc.lineTo(5, -2); bc.lineTo(-8, 6);
+  bc.closePath(); bc.fill();
+  bc.restore();
+
+  // 5. Braço e Arma
+  bc.save();
+  bc.translate(6, -38);
+  bc.rotate(armRot);
+  bc.strokeStyle = s.secondary;
+  bc.lineWidth = 12;
+  bc.beginPath(); bc.moveTo(0, 0); bc.lineTo(armX, armY); bc.stroke();
+  bc.translate(armX, armY);
+  drawBufferedWeapon(bc, { state: rowIdx === 2 ? 'attack' : 'idle' }, s);
+  bc.restore();
+
+  if (slashArc) {
+    bc.save();
+    bc.strokeStyle = slashArc.color;
+    bc.lineWidth = Math.max(2, slashArc.width);
+    bc.beginPath();
+    if (s.weaponType === 'spear') {
+      bc.moveTo(20, -28);
+      bc.lineTo(slashArc.r + 45, -28);
+    } else {
+      bc.arc(18, -28, slashArc.r, slashArc.a1, slashArc.a2);
+    }
+    bc.stroke();
+    bc.restore();
+  }
+
+  bc.restore();
+  bc.restore();
+
+  tc.save();
+  tc.shadowColor = '#000000';
+  tc.shadowBlur = 0;
+  [[-2.5,0],[2.5,0],[0,-2.5],[0,2.5],[-2,-2],[2,2],[-2,2],[2,-2]].forEach(([ox, oy]) => {
+    tc.shadowOffsetX = ox;
+    tc.shadowOffsetY = oy;
+    tc.drawImage(bodyLayer, 0, 0);
+  });
+  tc.shadowColor = 'transparent';
+  tc.drawImage(bodyLayer, 0, 0);
+  tc.restore();
+
+  return temp;
+}
+
+// ============================================================================
+// SINTETIZADOR DE 24 QUADROS POR AÇÃO PARA FOLHAS IMPORTADAS (UPSAMPLER 4 -> 24)
+// ============================================================================
+// Recebe uma linha recortada (ex: 4 quadros de uma folha externa) e gera 24 quadros reais interpolados!
+function expandRowTo24Frames(sourceFrames, rowIndex) {
+  if (!sourceFrames || sourceFrames.length === 0) return [];
+  if (sourceFrames.length >= MIN_FRAMES_PER_ACTION) return sourceFrames;
+
+  const expanded = [];
+  const srcLen = sourceFrames.length;
+  const isLoopingRow = (rowIndex === 0 || rowIndex === 1); // Idle e Corrida fazem loop fechado
+
+  for (let i = 0; i < MIN_FRAMES_PER_ACTION; i++) {
+    const norm = i / MIN_FRAMES_PER_ACTION; // 0.0 -> 1.0 nos 24 quadros
+    let exactIdx = isLoopingRow ? (norm * srcLen) : (norm * (srcLen - 1));
+    const idx1 = Math.floor(exactIdx) % srcLen;
+    const idx2 = isLoopingRow ? ((idx1 + 1) % srcLen) : Math.min(srcLen - 1, idx1 + 1);
+    const frac = exactIdx - Math.floor(exactIdx);
+    const smoothFrac = easeInOutSine(frac);
+
+    const frameCanvas = document.createElement('canvas');
+    frameCanvas.width = FRAME_W;
+    frameCanvas.height = FRAME_H;
+    const fc = frameCanvas.getContext('2d');
+
+    // Micro-cinemática orgânica ao longo dos 24 quadros (respiração/impulso ancorado nos pés)
+    const phase = norm * Math.PI * 2;
+    let scaleX = 1.0, scaleY = 1.0, shiftX = 0;
+
+    if (rowIndex === 0) {
+      // Idle: ciclo suave de respiração ao longo dos 24 quadros
+      scaleY = 1.0 + Math.sin(phase) * 0.018;
+      scaleX = 1.0 - Math.sin(phase) * 0.009;
+    } else if (rowIndex === 1) {
+      // Corrida: oscilação vertical de passada
+      scaleY = 1.0 + Math.abs(Math.cos(phase)) * 0.022;
+      shiftX = Math.sin(phase) * 2.5;
+    } else if (rowIndex === 2 || rowIndex === 3) {
+      // Ataque / Especial: extensão elástica no meio da sequência
+      const impactWave = Math.sin(norm * Math.PI);
+      scaleX = 1.0 + impactWave * 0.035;
+      scaleY = 1.0 - impactWave * 0.015;
+      shiftX = impactWave * 4.0;
+    }
+
+    fc.save();
+    fc.translate(PIVOT_X + shiftX, FOOT_Y);
+    fc.scale(scaleX, scaleY);
+    fc.translate(-PIVOT_X, -FOOT_Y);
+
+    // Desenha o quadro base
+    fc.drawImage(sourceFrames[idx1], 0, 0);
+
+    // Faz o blend sub-pixel com o quadro seguinte se estivermos em um quadro intermediário (In-Between)
+    if (idx2 !== idx1 && smoothFrac > 0.02) {
+      fc.globalAlpha = smoothFrac;
+      fc.drawImage(sourceFrames[idx2], 0, 0);
+    }
+    fc.restore();
+
+    expanded.push(frameCanvas);
+  }
+
+  return expanded;
+}
+
+// Exporta qualquer Servo (com seus 96 quadros: 4 linhas x 24 colunas) como imagem PNG transparente!
+function export24FrameSpriteSheetPNG(charKey) {
+  const activeAtlas = spriteAtlas[charKey] || preBakedAtlas[charKey];
+  if (!activeAtlas) return;
+
+  const thumbW = 240;
+  const thumbH = 160;
+  const sheetCanvas = document.createElement('canvas');
+  sheetCanvas.width = thumbW * MIN_FRAMES_PER_ACTION; // 24 colunas
+  sheetCanvas.height = thumbH * 4;                    // 4 linhas
+  const sc = sheetCanvas.getContext('2d');
+
+  for (let r = 0; r < 4; r++) {
+    const row = activeAtlas[r] || [];
+    for (let c = 0; c < MIN_FRAMES_PER_ACTION; c++) {
+      const frame = row[c % Math.max(1, row.length)];
+      if (frame) {
+        sc.drawImage(frame, 0, 0, FRAME_W, FRAME_H, c * thumbW, r * thumbH, thumbW, thumbH);
+      }
+    }
+  }
+
+  const link = document.createElement('a');
+  link.download = `${charKey.toLowerCase()}_24fps_96frames.png`;
+  link.href = sheetCanvas.toDataURL('image/png');
+  link.click();
+}
+
+// ============================================================================
+// RECORTADOR HÍBRIDO + EXPANSÃO AUTOMÁTICA PARA 24 QUADROS POR AÇÃO
+// ============================================================================
+function openSpriteDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('FateEclipseSpritesDB_v40', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('sheets');
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e);
+  });
+}
+
+async function saveSheetToDB(dbKey, dataURL) {
+  try {
+    const db = await openSpriteDB();
+    const tx = db.transaction('sheets', 'readwrite');
+    tx.objectStore('sheets').put(dataURL, dbKey);
+  } catch (e) {}
+}
+
+async function loadAllSheetsFromDB() {
+  try {
+    const db = await openSpriteDB();
+    const tx = db.transaction('sheets', 'readonly');
+    const store = tx.objectStore('sheets');
+    PLAYABLE_KEYS.forEach(key => {
+      const reqBase = store.get(`base_${key}`);
+      reqBase.onsuccess = () => {
+        if (reqBase.result) processLoadedSheetDataURL(key, 'base', reqBase.result, false);
+      };
+      const reqAtk = store.get(`atk_${key}`);
+      reqAtk.onsuccess = () => {
+        if (reqAtk.result) processLoadedSheetDataURL(key, 'attack', reqAtk.result, false);
+      };
+    });
+  } catch (e) {}
+}
+
+async function clearSavedSprites() {
+  try {
+    const db = await openSpriteDB();
+    const tx = db.transaction('sheets', 'readwrite');
+    tx.objectStore('sheets').clear();
+    PLAYABLE_KEYS.forEach(k => {
+      delete spriteAtlas[k];
+      delete attackSpriteAtlas[k];
+      delete rawSheetCache[`base_${k}`];
+      delete rawSheetCache[`atk_${k}`];
+      charCalib[k] = { mode: 'grid4x4', scale: 1.0, offX: 0, offY: 0 };
+    });
+    renderSpriteManagerSlots();
+  } catch (e) {}
+}
+
+function processLoadedSheetDataURL(charKey, sheetType, dataURL, save = true) {
+  const img = new Image();
+  img.onload = () => {
+    rawSheetCache[`${sheetType}_${charKey}`] = img;
+    rebuildCharacterAtlas(charKey, sheetType);
+    if (save) saveSheetToDB(`${sheetType === 'attack' ? 'atk' : 'base'}_${charKey}`, dataURL);
+    if (!document.getElementById('menu-sprites').classList.contains('hidden')) {
+      renderSpriteManagerSlots();
+    }
+  };
+  img.src = dataURL;
+}
+
+// ============================================================================
+// MOTOR DE RECORTE NATIVO 4x24 (5760x640 -> 96 CÉLULAS DE 240x160)
+// ============================================================================
+function cleanSheetBackground(img, force5760 = false) {
+  // Se for uma folha ultra-wide (4x24), padroniza na resolução exata 5760x640!
+  const isUltraWide = force5760 || (img.width / img.height >= 3.5);
+  const W = isUltraWide ? 5760 : img.width;
+  const H = isUltraWide ? 640  : img.height;
+  const cols = isUltraWide ? 24 : 4;
+
+  const rawCanvas = document.createElement('canvas');
+  rawCanvas.width = W;
+  rawCanvas.height = H;
+  const rCtx = rawCanvas.getContext('2d');
+  rCtx.drawImage(img, 0, 0, W, H);
+
+  const imgData = rCtx.getImageData(0, 0, W, H);
+  const d = imgData.data;
+  const bgR = d[0], bgG = d[1], bgB = d[2];
+  const tol = 44;
+
+  const visited = new Uint8Array(W * H);
+  const queue = new Int32Array(W * H);
+  let head = 0, tail = 0;
+
+  function trySeed(x, y) {
+    if (x < 0 || x >= W || y < 0 || y >= H) return;
+    const p = y * W + x;
+    if (visited[p]) return;
+    const i = p * 4;
+    const dist = Math.max(Math.abs(d[i] - bgR), Math.abs(d[i + 1] - bgG), Math.abs(d[i + 2] - bgB));
+    if (dist <= tol) {
+      visited[p] = 1;
+      queue[tail++] = p;
+    }
+  }
+
+  for (let x = 0; x < W; x++) {
+    trySeed(x, 0); trySeed(x, H - 1);
+    for (let r = 1; r < 4; r++) {
+      const ry = Math.floor((H / 4) * r);
+      trySeed(x, ry); trySeed(x, ry - 1);
+    }
+  }
+  for (let y = 0; y < H; y++) {
+    trySeed(0, y); trySeed(W - 1, y);
+    for (let c = 1; c < cols; c++) {
+      const cx = Math.floor((W / cols) * c);
+      trySeed(cx, y); trySeed(cx - 1, y);
+    }
+  }
+
+  while (head < tail) {
+    const p = queue[head++];
+    d[p * 4 + 3] = 0;
+    const x = p % W, y = (p / W) | 0;
+    if (x > 0) trySeed(x - 1, y);
+    if (x < W - 1) trySeed(x + 1, y);
+    if (y > 0) trySeed(x, y - 1);
+    if (y < H - 1) trySeed(x, y + 1);
+  }
+
+  rCtx.putImageData(imgData, 0, 0);
+  return { rawCanvas, d, W, H, cols, isUltraWide };
+}
+
+// Recorta diretamente as 96 células (4 linhas x 24 colunas de 240x160) em 5760x640
+function sliceStrictGrid4x24WithTrim(img) {
+  const { rawCanvas, d, W, H } = cleanSheetBackground(img, true); // Normalizado em 5760x640
+
+  // 1. Localiza automaticamente as faixas horizontais reais (funciona perfeitamente com 4 linhas ou 3 linhas!)
+  const rowDensity = new Int32Array(H);
+  for (let y = 0; y < H; y++) {
+    let count = 0;
+    for (let x = 0; x < W; x += 2) {
+      if (d[(y * W + x) * 4 + 3] > 75) count++;
+    }
+    rowDensity[y] = count;
+  }
+
+  let yBands = [];
+  let inBand = false, bandStart = 0;
+  for (let y = 0; y < H; y++) {
+    if (rowDensity[y] >= 8) {
+      if (!inBand) { inBand = true; bandStart = y; }
+    } else if (inBand) {
+      inBand = false;
+      if ((y - bandStart) >= H * 0.09) {
+        yBands.push({ yStart: Math.max(0, bandStart - 2), yEnd: Math.min(H - 1, y + 1) });
+      }
+    }
+  }
+  if (inBand && (H - bandStart) >= H * 0.09) {
+    yBands.push({ yStart: Math.max(0, bandStart - 2), yEnd: H - 1 });
+  }
+
+  // Se houver exatamente 3 ou 4 faixas limpas, usa os limites exatos delas; caso contrário, divide em 4 faixas de 160px
+  if (yBands.length < 3 || yBands.length > 4) {
+    yBands = [
+      { yStart: 0,   yEnd: 159 },
+      { yStart: 160, yEnd: 319 },
+      { yStart: 320, yEnd: 479 },
+      { yStart: 480, yEnd: 639 }
+    ];
+  }
+
+  const cellW = W / 24; // 240px por coluna (5760 / 24)
+  const cellBoxes = [[], [], [], []];
+  const rowZeroHeights = [];
+
+  for (let r = 0; r < yBands.length; r++) {
+    const { yStart, yEnd } = yBands[r];
+    const bandH = yEnd - yStart + 1;
+
+    for (let c = 0; c < 24; c++) {
+      const xStart = Math.floor(c * cellW) + 1;
+      const xEnd   = Math.floor((c + 1) * cellW) - 1;
+
+      let minX = xEnd, maxX = xStart, minY = yEnd, maxY = yStart;
+      let count = 0;
+
+      for (let y = yStart; y <= yEnd; y++) {
+        for (let x = xStart; x <= xEnd; x++) {
+          if (d[(y * W + x) * 4 + 3] > 75) {
+            count++;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      if (count > 20 && (maxY - minY) > bandH * 0.28) {
+        const box = { x1: minX, x2: maxX, minY, maxY };
+        cellBoxes[r].push(box);
+        if (r === 0) rowZeroHeights.push(maxY - minY + 1);
+      }
+    }
+  }
+
+  // Caso uma folha antiga de 3 linhas seja carregada, preenche a 4ª linha separando ataques normais e especiais
+  if (yBands.length === 3 && cellBoxes[3].length === 0) {
+    if (cellBoxes[2].length >= 12) {
+      const splitIdx = Math.floor(cellBoxes[2].length * 0.5);
+      cellBoxes[3] = cellBoxes[2].slice(splitIdx);
+      cellBoxes[2] = cellBoxes[2].slice(0, splitIdx);
+    } else {
+      cellBoxes[3] = [...cellBoxes[2]];
+    }
+  }
+
+  rowZeroHeights.sort((a, b) => a - b);
+  const refH = rowZeroHeights.length > 0 ? rowZeroHeights[Math.floor(rowZeroHeights.length / 2)] : 120;
+  const lockedScale = Math.min(2.4, Math.max(0.7, 185 / refH));
+
+  const outRows = [[], [], [], []];
+  for (let r = 0; r < 4; r++) {
+    const boxes = cellBoxes[r];
+    if (!boxes || boxes.length === 0) continue;
+    const footYs = boxes.map(b => b.maxY).sort((a, b) => a - b);
+    const stableFootY = footYs[Math.floor(footYs.length / 2)];
+    boxes.forEach(box => {
+      outRows[r].push(buildSpineLockedFrameV40(rawCanvas, d, W, box, lockedScale, stableFootY));
+    });
+  }
+
+  return outRows;
+}
+
+function rebuildCharacterAtlas(charKey, sheetType = 'base') {
+  const img = rawSheetCache[`${sheetType}_${charKey}`];
+  if (!img) return;
+
+  // Detecta automaticamente se a folha carregada é o novo padrão 4x24 (Ultra-Wide 5760x640)
+  const is4x24Sheet = (img.width / img.height) >= 3.5;
+  let baseSliced;
+
+  if (is4x24Sheet) {
+    baseSliced = sliceStrictGrid4x24WithTrim(img);
+  } else {
+    const mode = charCalib[charKey]?.mode || 'grid4x4';
+    baseSliced = mode === 'grid4x4'
+      ? sliceStrictGrid4x4WithTrim(img)
+      : sliceAutoDetectRowsAndValleys(img);
+  }
+
+  // Garante que todas as 4 linhas tenham exatamente 24 quadros prontos em cache
+  const expanded24 = baseSliced.map((rowFrames, rIdx) => expandRowTo24Frames(rowFrames, rIdx));
+
+  if (sheetType === 'attack') attackSpriteAtlas[charKey] = expanded24;
+  else spriteAtlas[charKey] = expanded24;
+}
+
+function sliceStrictGrid4x4WithTrim(img) {
+  const { rawCanvas, d, W, H } = cleanSheetBackground(img);
+  const cellW = W / 4;
+  const cellH = H / 4;
+
+  const cellBoxes = [[], [], [], []];
+  const rowZeroHeights = [];
+
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 4; c++) {
+      const xStart = Math.floor(c * cellW) + 2;
+      const xEnd   = Math.floor((c + 1) * cellW) - 2;
+      const yStart = Math.floor(r * cellH) + 2;
+      const yEnd   = Math.floor((r + 1) * cellH) - 2;
+
+      let minX = xEnd, maxX = xStart, minY = yEnd, maxY = yStart;
+      let count = 0;
+
+      for (let y = yStart; y <= yEnd; y++) {
+        for (let x = xStart; x <= xEnd; x++) {
+          if (d[(y * W + x) * 4 + 3] > 75) {
+            count++;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      if (count > 40 && (maxY - minY) > cellH * 0.28) {
+        const box = { x1: minX, x2: maxX, minY, maxY };
+        cellBoxes[r].push(box);
+        if (r === 0) rowZeroHeights.push(maxY - minY + 1);
+      }
+    }
+  }
+
+  rowZeroHeights.sort((a, b) => a - b);
+  const refH = rowZeroHeights.length > 0 ? rowZeroHeights[Math.floor(rowZeroHeights.length / 2)] : (cellH * 0.75);
+  const lockedScale = Math.min(2.1, Math.max(0.65, 185 / refH));
+
+  const outRows = [[], [], [], []];
+  for (let r = 0; r < 4; r++) {
+    const boxes = cellBoxes[r];
+    if (boxes.length === 0) continue;
+    const footYs = boxes.map(b => b.maxY).sort((a, b) => a - b);
+    const stableFootY = footYs[Math.floor(footYs.length / 2)];
+    boxes.forEach(box => {
+      outRows[r].push(buildSpineLockedFrameV40(rawCanvas, d, W, box, lockedScale, stableFootY));
+    });
+  }
+  return outRows;
+}
+
+function sliceAutoDetectRowsAndValleys(img) {
+  const { rawCanvas, d, W, H } = cleanSheetBackground(img);
+  const rowH = Math.floor(H / 4);
+  const rawRowCrops = [[], [], [], []];
+
+  for (let r = 0; r < 4; r++) {
+    const yStart = r * rowH;
+    const yEnd = (r === 3) ? H : (r + 1) * rowH;
+    const anyCol = new Int32Array(W);
+
+    for (let x = 0; x < W; x++) {
+      let c = 0;
+      for (let y = yStart + 3; y < yEnd - 3; y++) {
+        if (d[(y * W + x) * 4 + 3] > 70) c++;
+      }
+      anyCol[x] = c;
+    }
+
+    const blocks = [];
+    let inB = false, bStart = 0;
+    for (let x = 0; x < W; x++) {
+      if (anyCol[x] >= 2) {
+        if (!inB) { inB = true; bStart = x; }
+      } else if (inB) {
+        inB = false;
+        blocks.push({ x1: bStart, x2: x - 1 });
+      }
+    }
+    if (inB) blocks.push({ x1: bStart, x2: W - 1 });
+
+    blocks.forEach(seg => {
+      if ((seg.x2 - seg.x1) < W * 0.03) return;
+      let minY = yEnd, maxY = yStart;
+      for (let x = seg.x1; x <= seg.x2; x++) {
+        for (let y = yStart; y < yEnd; y++) {
+          if (d[(y * W + x) * 4 + 3] > 80) {
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if ((maxY - minY) >= rowH * 0.35) {
+        rawRowCrops[r].push({ x1: seg.x1, x2: seg.x2, minY, maxY });
+      }
+    });
+  }
+
+  let refH = rowH * 0.75;
+  if (rawRowCrops[0].length > 0) {
+    const hs = rawRowCrops[0].map(c => c.maxY - c.minY + 1).sort((a, b) => a - b);
+    refH = hs[Math.floor(hs.length / 2)];
+  }
+  const lockedScale = Math.min(2.1, Math.max(0.65, 185 / refH));
+
+  const outRows = [[], [], [], []];
+  for (let r = 0; r < 4; r++) {
+    const crops = rawRowCrops[r];
+    if (crops.length === 0) continue;
+    const footYs = crops.map(c => c.maxY).sort((a, b) => a - b);
+    const stableFootY = footYs[Math.floor(footYs.length / 2)];
+    crops.forEach(crop => {
+      outRows[r].push(buildSpineLockedFrameV40(rawCanvas, d, W, crop, lockedScale, stableFootY));
+    });
+  }
+  return outRows;
+}
+
+function isBodyCorePixel(r, g, b, a) {
+  if (a < 110) return false;
+  const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+  const lum = (r * 0.299 + g * 0.587 + b * 0.114);
+  const sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
+  if (lum > 225) return false;
+  if (lum > 175 && sat > 0.65) return false;
+  return true;
+}
+
+function buildSpineLockedFrameV40(rawCanvas, d, W, crop, lockedScale, stableRowFootY) {
+  const { x1, x2, minY, maxY } = crop;
+  const fCanvas = document.createElement('canvas');
+  fCanvas.width = FRAME_W;
+  fCanvas.height = FRAME_H;
+  const fCtx = fCanvas.getContext('2d');
+
+  const cropH = maxY - minY + 1;
+  const colWeights = new Float64Array(x2 - x1 + 1);
+  let maxWeight = 0;
+
+  for (let x = x1; x <= x2; x++) {
+    let corePixels = 0;
+    let minCoreY = maxY, maxCoreY = minY;
+    for (let y = minY; y <= maxY; y++) {
+      const idx = (y * W + x) * 4;
+      if (isBodyCorePixel(d[idx], d[idx + 1], d[idx + 2], d[idx + 3])) {
+        corePixels++;
+        if (y < minCoreY) minCoreY = y;
+        if (y > maxCoreY) maxCoreY = y;
+      }
+    }
+    const span = Math.max(0, maxCoreY - minCoreY);
+    const w = (corePixels * corePixels) * span;
+    colWeights[x - x1] = w;
+    if (w > maxWeight) maxWeight = w;
+  }
+
+  let weightedSum = 0, weightTotal = 0;
+  const threshold = maxWeight * 0.35;
+  for (let i = 0; i < colWeights.length; i++) {
+    if (colWeights[i] >= threshold) {
+      weightedSum += (x1 + i) * colWeights[i];
+      weightTotal += colWeights[i];
+    }
+  }
+
+  const spineX = weightTotal > 0 ? (weightedSum / weightTotal) : ((x1 + x2) / 2);
+  const effectiveFootY = Math.min(maxY, stableRowFootY + 8);
+
+  const cropW = x2 - x1 + 1;
+  const drawW = cropW * lockedScale;
+  const drawH = cropH * lockedScale;
+
+  const destX = PIVOT_X - (spineX - x1) * lockedScale;
+  const destY = FOOT_Y - (effectiveFootY - minY) * lockedScale;
+
+  fCtx.drawImage(rawCanvas, x1, minY, cropW, cropH, destX, destY, drawW, drawH);
+  return fCanvas;
+}
+
+function openSpriteManager() {
+  showMenu('menu-sprites');
+  renderSpriteManagerSlots();
+}
+
+function toggleSliceMode(charKey) {
+  charCalib[charKey].mode = charCalib[charKey].mode === 'grid4x4' ? 'auto' : 'grid4x4';
+  rebuildCharacterAtlas(charKey, 'base');
+  rebuildCharacterAtlas(charKey, 'attack');
+  renderSpriteManagerSlots();
+}
+
+function updateCalibValue(charKey, prop, val) {
+  charCalib[charKey][prop] = parseFloat(val);
+}
+
+function renderSpriteManagerSlots() {
+  const container = document.getElementById('sprite-slots-container');
+  container.innerHTML = '';
+
+  PLAYABLE_KEYS.forEach(key => {
+    const slot = document.createElement('div');
+    slot.className = 'sprite-slot';
+    const hasBase = spriteAtlas[key] && spriteAtlas[key][0]?.length > 0;
+    const hasAtk  = attackSpriteAtlas[key] && attackSpriteAtlas[key][0]?.length > 0;
+    const cal = charCalib[key];
+
+    const activeAtlas = hasAtk ? attackSpriteAtlas[key] : (hasBase ? spriteAtlas[key] : preBakedAtlas[key]);
+    const counts = activeAtlas ? activeAtlas.map(r => r.length).join(' / ') : '24 / 24 / 24 / 24';
+    const statusTxt = hasBase
+      ? `Folha Expandida (${counts} quadros)`
+      : `Atlas HD Nativo (${counts} quadros)`;
+
+    slot.innerHTML = `
+      <h4>
+        <span>${key}</span>
+        <span style="font-size:10px; color:var(--cyan);">${statusTxt}</span>
+      </h4>
+      <div class="preview-strip" id="strip-${key}"></div>
+      <div class="slot-btn-row">
+        <button class="btn-center" style="padding:5px 4px; font-size:10px;" onclick="triggerFileSelect('${key}', 'base')">
+          Importar Base
+        </button>
+        <button class="btn-center btn-cyan" style="padding:5px 4px; font-size:10px;" onclick="triggerFileSelect('${key}', 'attack')">
+          Importar Ataques
+        </button>
+        <button class="btn-center" style="padding:5px 4px; font-size:10px;" onclick="export24FrameSpriteSheetPNG('${key}')">
+          Baixar 4x24 PNG
+        </button>
+      </div>
+      <div class="calib-row">
+        <span>Escala: <input type="range" min="0.75" max="1.35" step="0.02" value="${cal.scale}" oninput="updateCalibValue('${key}','scale',this.value)"></span>
+        <span>Pivô X: <input type="range" min="-40" max="40" step="2" value="${cal.offX}" oninput="updateCalibValue('${key}','offX',this.value)"></span>
+        <span>Pés Y: <input type="range" min="-30" max="30" step="2" value="${cal.offY}" oninput="updateCalibValue('${key}','offY',this.value)"></span>
+      </div>
+    `;
+    container.appendChild(slot);
+
+    const strip = slot.querySelector(`#strip-${key}`);
+    if (activeAtlas) {
+      // Mostra 6 amostras distribuídas dos 24 quadros de ataque/ação
+      const sampleRow = activeAtlas[2] || activeAtlas[0];
+      for (let i = 0; i < 6; i++) {
+        const idx = Math.floor((i / 6) * sampleRow.length);
+        if (sampleRow[idx]) strip.appendChild(sampleRow[idx]);
+      }
+    }
+  });
+}
+
+function triggerFileSelect(charKey, sheetType) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => processLoadedSheetDataURL(charKey, sheetType, ev.target.result, true);
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+// ============================================================================
+// CAMPANHAS, LUTADORES E FÍSICA DE ANIMAÇÃO FLUIDA 24 FPS -> 60 FPS
+// ============================================================================
+const CAMPAIGNS = {
+  Saber: {
+    title: 'Juramento da Espada',
+    opponents: ['Lancer', 'Rider', 'Caster', 'Archer', 'Berserker', 'Eco'],
+    intro: 'O eclipse tingiu o céu de Fuyuki. Preciso proteger Shirou e deter os ecos invocados pelo Graal.',
+    choicePrompt: 'O Eco do Graal foi derrotado. O núcleo corrompido pulsa diante de Saber e Shirou. Qual será sua decisão?',
+    choices: [
+      { label: 'Selar o Graal', ending: 'FINAL A — Selo Eterno: Saber e Shirou contêm a anomalia sob o templo de Fuyuki. A cidade desperta em paz.' },
+      { label: 'Destruir o Graal com Excalibur', ending: 'FINAL B — Luz Dourada: Um disparo final da Excalibur dissipa o Graal para sempre, encerrando o ritual.' }
+    ]
+  },
+  Archer: {
+    title: 'Ecos do Ideal',
+    opponents: ['Saber', 'Lancer', 'Rider', 'Berserker', 'Caster', 'Eco'],
+    intro: 'A anomalia está repetindo os confrontos. Ao lado de Rin, vou rastrear a origem desse ciclo.',
+    choicePrompt: 'O guardião caiu. Você e Rin encontram o registro matriz da anomalia no interior do Graal.',
+    choices: [
+      { label: 'Romper o Ciclo', ending: 'FINAL A — Horizonte Limpo: Archer destrói a matriz temporal. Rin garante que Fuyuki não repita a Guerra.' },
+      { label: 'Preservar um Último Eco', ending: 'FINAL B — Memória de Aço: Archer isola um fragmento da anomalia para compreender a raiz do próprio ideal.' }
+    ]
+  },
+  Caster: {
+    title: 'Contrato da Feiticeira',
+    opponents: ['Archer', 'Rider', 'Lancer', 'Saber', 'Berserker', 'Eco'],
+    intro: 'Este eclipse não fará de mim uma marionete. Tomarei o controle do ritual com minhas próprias mãos.',
+    choicePrompt: 'O Eco do Graal se curva diante do seu círculo mágico. O poder do ritual está sob seu domínio.',
+    choices: [
+      { label: 'Usar o Poder do Graal', ending: 'FINAL A — Soberana da Noite: Caster reescreve as leis da magia em Fuyuki, estabelecendo seu território.' },
+      { label: 'Desfazer o Vínculo', ending: 'FINAL B — Liberdade: Com o Rule Breaker, Caster corta todas as amarras do ritual e vive livre.' }
+    ]
+  }
+};
+
+let campaignState = { hero: 'Saber', stage: 0 };
+
+let match = {
+  p1Rounds: 0, p2Rounds: 0, roundNum: 1, timer: 99, timerTick: 0,
+  state: 'fight', bannerText: '', bannerTimer: 0,
+  cinematicText: '', cinematicFighter: null, cinematicTarget: null, cinematicTimer: 0, cinematicMaxTimer: 100,
+  shakeTimer: 0, flashTimer: 0, hitstopTimer: 0,
+  projectiles: [], particles: [], specialEffects: [], afterImages: []
+};
+
+class Fighter {
+  constructor(charKey, isP1) {
+    this.baseKey = charKey;
+    this.isP1 = isP1;
+    this.maxHp = 1000;
+    this.seals = 3;
+    this.savedSealsAtRoundStart = 3;
+    this.loadStyle(charKey);
+    this.resetForRound(true);
+  }
+  loadStyle(charKey) {
+    const d = SERVANTS[charKey];
+    this.charKey = charKey;
+    this.name = this.baseKey === 'Eco' ? `Eco (${d.name})` : d.name;
+    this.style = d;
+    this.speed = d.speed;
+    this.range = d.range;
+    this.dmgMult = d.dmgMult;
+    this.npName = d.npName;
+  }
+  resetForRound(keepSeals = true) {
+    this.hp = this.maxHp;
+    this.mana = gameMode === 'training' ? 3.0 : 0.0;
+    if (!keepSeals) this.seals = this.savedSealsAtRoundStart;
+    this.savedSealsAtRoundStart = this.seals;
+    this.usedSealThisRound = false;
+    this.x = this.isP1 ? 340 : 940;
+    this.y = 560;
+    this.vx = 0; this.vy = 0;
+    this.wasInAir = false;
+    this.facing = this.isP1 ? 1 : -1;
+    this.crouching = false;
+    this.blocking = 'none';
+    this.state = 'idle';
+    this.stateTimer = 0;
+    this.stateDuration = 1;
+    this.attackType = null;
+    this.hasHit = false;
+    this.comboHits = 0;
+    this.airComboTime = 0;
+    this.superArmor = false;
+    this.exAuraTimer = 0;
+
+    this.animRow = 0;
+    this.animTimer = 0;
+    this.squashX = 1.0;
+    this.squashY = 1.0;
+    this.dynamicLean = 0.0;
+    this.lastRenderedFrame = null;
+    this.stateTransitionFrame = null;
+    this.stateTransitionAlpha = 0.0;
+  }
+  addMana(amount) {
+    this.mana = Math.min(3.0, Math.max(0.0, this.mana + amount));
+  }
+  triggerSquash(sx, sy) {
+    this.squashX = sx;
+    this.squashY = sy;
+  }
+  updateAnimationState() {
+    if (this.exAuraTimer > 0) this.exAuraTimer--;
+
+    const targetSY = this.crouching ? 0.85 : 1.0;
+    const targetSX = this.crouching ? 1.06 : 1.0;
+    this.squashX += (targetSX - this.squashX) * 0.22;
+    this.squashY += (targetSY - this.squashY) * 0.22;
+
+    const targetLean = (this.state === 'idle' && Math.abs(this.vx) > 0.5)
+      ? (this.vx * this.facing) * 0.012
+      : 0.0;
+    this.dynamicLean += (targetLean - this.dynamicLean) * 0.25;
+
+    if (this.stateTransitionAlpha > 0) {
+      this.stateTransitionAlpha = Math.max(0, this.stateTransitionAlpha - 0.12);
+    }
+
+    let targetRow = 0;
+    if (this.state === 'attack') {
+      const isSpec = (this.attackType === 'special' || this.attackType === 'ex' || this.attackType === 'np');
+      targetRow = isSpec ? 3 : 2;
+    } else if (this.blocking !== 'none' || this.state === 'hitstun' || this.state === 'knockdown') {
+      targetRow = 3;
+    } else if (Math.abs(this.vx) > 0.5 || this.y < 560) {
+      targetRow = 1;
+    }
+
+    if (targetRow !== this.animRow) {
+      if (this.lastRenderedFrame && fluidInterpEnabled) {
+        this.stateTransitionFrame = this.lastRenderedFrame;
+        this.stateTransitionAlpha = 0.45;
+      }
+      this.animRow = targetRow;
+      this.animTimer = 0;
+    } else {
+      this.animTimer++;
+    }
+  }
+}
+
+buildAllPreBakedAtlases();
+loadAllSheetsFromDB();
+
+PLAYABLE_KEYS.forEach(key => {
+  ['.png', '.jpg', '.jpeg'].forEach(ext => {
+    const imgMaster = new Image();
+    imgMaster.onload = () => {
+      rawSheetCache[`base_${key}`] = imgMaster;
+      if (!spriteAtlas[key]) rebuildCharacterAtlas(key, 'base');
+    };
+    imgMaster.src = `${key.toLowerCase()}_master${ext}`;
+  });
+});
+
+let p1 = new Fighter('Saber', true);
+let p2 = new Fighter('Lancer', false);
+
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Escape') showMenu('menu-main');
+  if (gameMode !== 'menu' && match.state === 'fight') handleDiscreteInput(e.code);
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function showMenu(id) {
+  document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+  if (id) {
+    document.getElementById(id).classList.remove('hidden');
+    gameMode = 'menu';
+  }
+}
+
+function toggleVisualSettings() {
+  fxEnabled = !fxEnabled;
+  const lbl = document.getElementById('lbl-fx-state');
+  if (lbl) lbl.innerText = fxEnabled ? 'ATIVADO' : 'DESATIVADO';
+}
+
+function toggleFluidInterpolation() {
+  fluidInterpEnabled = !fluidInterpEnabled;
+  const lbl = document.getElementById('lbl-interp-state');
+  if (lbl) lbl.innerText = fluidInterpEnabled ? 'ATIVADA' : 'DESATIVADA';
+}
+
+function openCampaignSelect() { showMenu('menu-campaign'); }
+
+function openCharSelect(mode) {
+  pendingMode = mode;
+  selectStep = 1;
+  showMenu('menu-char');
+  updateCharSelectUI();
+}
+
+function setSlotStep(step) { selectStep = step; updateCharSelectUI(); }
+function switchActiveSlot() { selectStep = selectStep === 1 ? 2 : 1; updateCharSelectUI(); }
+
+function toggleOpponentBehavior() {
+  if (pendingMode === 'versus') {
+    versusP2IsHuman = !versusP2IsHuman;
+  } else if (pendingMode === 'training') {
+    const order = ['idle', 'block', 'cpu'];
+    trainingDummyMode = order[(order.indexOf(trainingDummyMode) + 1) % order.length];
+  }
+  updateCharSelectUI();
+}
+
+function updateCharSelectUI() {
+  const isTraining = pendingMode === 'training';
+  document.getElementById('char-mode-badge').innerText = isTraining
+    ? 'Modo de Treino • Mana Infinita & 24 Quadros por Ação'
+    : 'Modo Versus Local • Melhor de 3 Rounds (99s)';
+
+  document.getElementById('char-select-title').innerText = isTraining
+    ? 'CONFIGURAR TREINO DE COMBATE'
+    : 'DUELO VERSUS 1 CONTRA 1';
+
+  const oppBtn = document.getElementById('btn-opp-toggle');
+  if (isTraining) {
+    const labels = { idle: 'Boneco: Parado', block: 'Boneco: Sempre Defender', cpu: 'Boneco: IA Ativa' };
+    oppBtn.innerText = labels[trainingDummyMode];
+    document.getElementById('p2-slot-title').innerText = '● BONECO DE TREINO';
+  } else {
+    oppBtn.innerText = versusP2IsHuman ? 'Oponente: JOGADOR 2 (Teclado)' : 'Oponente: CPU (IA)';
+    document.getElementById('p2-slot-title').innerText = versusP2IsHuman ? '● JOGADOR 2 (HUMANO)' : '● OPONENTE (CPU)';
+  }
+
+  document.getElementById('btn-switch-slot').innerText = selectStep === 1
+    ? 'Escolhendo: Jogador 1 (Clique p/ mudar J2)'
+    : 'Escolhendo: Oponente / J2 (Clique p/ mudar J1)';
+
+  document.getElementById('panel-slot-p1').classList.toggle('active-slot', selectStep === 1);
+  document.getElementById('panel-slot-p2').classList.toggle('active-slot', selectStep === 2);
+
+  fillSlotStats('p1', p1Choice);
+  fillSlotStats('p2', p2Choice);
+
+  const container = document.getElementById('char-cards');
+  container.innerHTML = '';
+  PLAYABLE_KEYS.forEach(k => {
+    const s = SERVANTS[k];
+    const div = document.createElement('div');
+    const classes = ['roster-card'];
+    if (p1Choice === k) classes.push('p1-picked');
+    if (p2Choice === k) classes.push('p2-picked');
+    div.className = classes.join(' ');
+
+    div.innerHTML = `
+      <div class="avatar-swatch" style="background: linear-gradient(135deg, ${s.primary}, ${s.hair});">
+        ${s.name[0]}
+      </div>
+      <h4>${s.name}</h4>
+      <p>${s.desc}</p>
+    `;
+    div.onclick = () => selectCharacterFromGrid(k);
+    container.appendChild(div);
+  });
+}
+
+function fillSlotStats(prefix, charKey) {
+  const s = SERVANTS[charKey];
+  document.getElementById(`${prefix}-preview-name`).innerText = s.name;
+  document.getElementById(`${prefix}-preview-np`).innerText = `Nobre Fantasma: ${s.npName}`;
+  document.getElementById(`${prefix}-bar-spd`).style.width = `${Math.min(100, (s.speed / 8.2) * 100)}%`;
+  document.getElementById(`${prefix}-bar-rng`).style.width = `${Math.min(100, (s.range / 160) * 100)}%`;
+  document.getElementById(`${prefix}-bar-dmg`).style.width = `${Math.min(100, (s.dmgMult / 1.35) * 100)}%`;
+}
+
+function selectCharacterFromGrid(k) {
+  if (selectStep === 1) { p1Choice = k; selectStep = 2; }
+  else { p2Choice = k; }
+  updateCharSelectUI();
+}
+
+function confirmCharacterSelection() { startMatch(pendingMode); }
+
+function startCampaign(heroKey) {
+  campaignState.hero = heroKey;
+  campaignState.stage = 0;
+  const camp = CAMPAIGNS[heroKey];
+  showDialog(heroKey, `${camp.title} — Duelo 1 de 6\n\n"${camp.intro}"`, [
+    { label: 'Iniciar Duelo', action: () => launchCampaignFight() }
+  ]);
+}
+
+function launchCampaignFight() {
+  const camp = CAMPAIGNS[campaignState.hero];
+  p1Choice = campaignState.hero;
+  p2Choice = camp.opponents[campaignState.stage];
+  startMatch('campaign');
+}
+
+function showDialog(speaker, text, buttons) {
+  showMenu('menu-dialog');
+  document.getElementById('dlg-speaker').innerText = speaker;
+  document.getElementById('dlg-text').innerText = text;
+  const btnArea = document.getElementById('dlg-buttons');
+  btnArea.innerHTML = '';
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-center';
+    btn.innerText = b.label;
+    btn.onclick = b.action;
+    btnArea.appendChild(btn);
+  });
+}
+
+function startMatch(mode) {
+  showMenu(null);
+  gameMode = mode;
+  p1 = new Fighter(p1Choice, true);
+  p2 = new Fighter(p2Choice, false);
+  match.p1Rounds = 0; match.p2Rounds = 0; match.roundNum = 1;
+  startRound(true);
+}
+
+function startRound(keepSeals) {
+  p1.resetForRound(keepSeals);
+  p2.resetForRound(keepSeals);
+  match.timer = 99;
+  match.timerTick = 0;
+  match.projectiles = [];
+  match.particles = [];
+  match.specialEffects = [];
+  match.afterImages = [];
+  match.state = 'fight';
+  if (gameMode === 'training') {
+    announce('MODO DE TREINO — 24 QUADROS POR AÇÃO (96 FRAMES/SERVO) ATIVOS!', 95);
+  } else {
+    announce(`ROUND ${match.roundNum} — LUTEM!`);
+  }
+}
+
+function announce(txt, duration = 85) {
+  match.bannerText = txt;
+  match.bannerTimer = duration;
+}
+
+function handleDiscreteInput(code) {
+  if (code === 'Digit1') trySealHeal(p1);
+  if (code === 'Digit2') trySealEscape(p1);
+  if (code === 'KeyJ') triggerAttack(p1, 'light');
+  if (code === 'KeyK') triggerAttack(p1, 'medium');
+  if (code === 'KeyL') triggerAttack(p1, 'heavy');
+  if (code === 'KeyU') triggerAttack(p1, 'special');
+  if (code === 'KeyI') triggerAttack(p1, 'throw');
+  if (code === 'KeyO') triggerAttack(p1, 'ex');
+  if (code === 'KeyP') triggerAttack(p1, 'np');
+
+  if (gameMode === 'versus' && versusP2IsHuman) {
+    if (code === 'Digit8' || code === 'Numpad7') trySealHeal(p2);
+    if (code === 'Digit9' || code === 'Numpad8') trySealEscape(p2);
+    if (code === 'Numpad1') triggerAttack(p2, 'light');
+    if (code === 'Numpad2') triggerAttack(p2, 'medium');
+    if (code === 'Numpad3') triggerAttack(p2, 'heavy');
+    if (code === 'Numpad4') triggerAttack(p2, 'special');
+    if (code === 'Numpad5') triggerAttack(p2, 'throw');
+    if (code === 'Numpad6') triggerAttack(p2, 'ex');
+    if (code === 'Numpad0' || code === 'Enter') triggerAttack(p2, 'np');
+  }
+}
+
+function trySealHeal(f) {
+  if (f.usedSealThisRound || f.seals < 1 || f.hp <= 0) return;
+  f.seals -= 1;
+  f.usedSealThisRound = true;
+  f.hp = Math.min(f.maxHp, f.hp + f.maxHp * 0.15);
+  f.triggerSquash(0.92, 1.10);
+  spawnParticles(f.x, f.y - 70, '#22c55e', 28);
+  announce(`${f.name}: SELO DE COMANDO (+15% VIDA)!`, 65);
+}
+
+function trySealEscape(f) {
+  if (f.usedSealThisRound || f.seals < 2 || f.state !== 'hitstun') return;
+  f.seals -= 2;
+  f.usedSealThisRound = true;
+  f.state = 'idle';
+  f.comboHits = 0;
+  f.airComboTime = 0;
+  f.triggerSquash(1.15, 0.88);
+  const opp = f.isP1 ? p2 : p1;
+  opp.vx = -opp.facing * 15;
+  spawnParticles(f.x, f.y - 70, '#38bdf8', 36);
+  announce(`${f.name}: ESCAPE DE COMBO (2 SELOS)!`, 65);
+}
+
+function triggerAttack(f, type) {
+  if (f.state === 'hitstun' || f.state === 'knockdown') return;
+  if (f.state === 'attack') {
+    const order = { light: 1, medium: 2, heavy: 3, special: 4, ex: 5, np: 6 };
+    if (!order[type] || order[type] <= (order[f.attackType] || 99)) return;
+  }
+
+  if (type === 'ex') {
+    if (f.mana < 1.0) { announce('MANA INSUFICIENTE (1 SEGMENTO)!', 40); return; }
+    f.mana -= 1.0;
+    f.exAuraTimer = 34;
+    announce(`${f.name.toUpperCase()}: ${f.style.exName}!`, 55);
+  } else if (type === 'np') {
+    if (f.mana < 3.0) { announce('PRECISA DE 3 SEGMENTOS DE MANA!', 40); return; }
+    f.mana = 0.0;
+    f.exAuraTimer = 45;
+  } else if (type === 'special') {
+    announce(`${f.name.toUpperCase()}: ${f.style.specialName}!`, 45);
+  }
+
+  if (f.lastRenderedFrame && fluidInterpEnabled) {
+    f.stateTransitionFrame = f.lastRenderedFrame;
+    f.stateTransitionAlpha = 0.40;
+  }
+
+  f.state = 'attack';
+  f.attackType = type;
+  f.hasHit = false;
+  // Duração ajustada para exibir os 24 quadros com nitidez a 60 FPS
+  const dur = type === 'light' ? 20 : type === 'medium' ? 24 : type === 'heavy' ? 32 : type === 'special' ? 30 : type === 'ex' ? 34 : 36;
+  f.stateTimer = dur;
+  f.stateDuration = dur;
+
+  if (type === 'heavy' || type === 'ex') f.triggerSquash(0.90, 1.12);
+  else f.triggerSquash(1.08, 0.94);
+
+  f.superArmor = (f.charKey === 'Berserker' && (type === 'heavy' || type === 'special' || type === 'ex'));
+
+  if (type === 'medium') f.vx = f.facing * (f.speed * 1.05);
+
+  if (type === 'special' || type === 'ex' || type === 'np') {
+    spawnServantSpecialAnimation(f, type);
+  }
+}
+
+function spawnServantSpecialAnimation(f, type) {
+  const isEX = (type === 'ex' || type === 'np');
+  const ck = f.charKey;
+
+  if (isEX) {
+    match.specialEffects.push({
+      kind: 'mana_burst', x: f.x, y: f.y - 75, facing: f.facing,
+      color: type === 'np' ? '#fde047' : '#38bdf8',
+      life: 22, maxLife: 22
+    });
+    spawnParticles(f.x, f.y - 70, '#fde047', 24);
+  }
+
+  if (ck === 'Saber' || ck === 'Eco') {
+    f.vx = f.facing * (isEX ? 13 : 8.5);
+    match.specialEffects.push({
+      kind: 'saber_wind_slash', fighter: f, x: f.x + f.facing * 65, y: f.y - 88, facing: f.facing,
+      isEX, color: ck === 'Eco' ? '#ef4444' : '#fde047', subColor: '#38bdf8',
+      life: 24, maxLife: 24
+    });
+    if (type === 'ex') {
+      match.projectiles.push({
+        owner: f, x: f.x + f.facing * 75, y: f.y - 85,
+        vx: f.facing * 14, dmg: 75, color: '#fde047', subColor: '#38bdf8',
+        shape: 'wave', radius: 34
+      });
+    }
+  } else if (ck === 'Lancer') {
+    f.vx = f.facing * (isEX ? 15 : 10);
+    match.specialEffects.push({
+      kind: 'lancer_barrage', fighter: f, x: f.x, y: f.y - 85, facing: f.facing,
+      isEX, color: '#ef4444', subColor: '#fca5a5',
+      life: 24, maxLife: 24
+    });
+  } else if (ck === 'Archer') {
+    match.specialEffects.push({
+      kind: 'archer_trace', fighter: f, x: f.x, y: f.y - 85, facing: f.facing,
+      isEX, color: '#38bdf8', life: 22, maxLife: 22
+    });
+    if (type !== 'np') {
+      match.projectiles.push({
+        owner: f, x: f.x + f.facing * 60, y: f.y - 82,
+        vx: f.facing * (isEX ? 16.5 : 11.5),
+        dmg: isEX ? 120 : 68,
+        color: isEX ? '#ef4444' : '#e2e8f0',
+        subColor: '#38bdf8',
+        shape: isEX ? 'caladbolg' : 'twin_blades',
+        radius: isEX ? 22 : 18,
+        angle: 0
+      });
+    }
+  } else if (ck === 'Rider') {
+    f.vx = f.facing * (isEX ? 17 : 13);
+    if (isEX && f.y >= 560) f.vy = -8;
+    match.specialEffects.push({
+      kind: 'rider_chains', fighter: f, x: f.x, y: f.y - 80, facing: f.facing,
+      isEX, color: '#c084fc', subColor: '#f472b6',
+      life: 26, maxLife: 26
+    });
+  } else if (ck === 'Caster') {
+    match.specialEffects.push({
+      kind: 'caster_sigil', fighter: f, x: f.x + f.facing * 52, y: f.y - 92, facing: f.facing,
+      isEX, color: '#c084fc', subColor: '#38bdf8',
+      life: 28, maxLife: 28
+    });
+    if (type !== 'np') {
+      match.projectiles.push({
+        owner: f, x: f.x + f.facing * 65, y: f.y - 88,
+        vx: f.facing * (isEX ? 14.5 : 10),
+        dmg: isEX ? 105 : 60,
+        color: '#c084fc', subColor: '#fde047',
+        shape: 'orb', radius: isEX ? 22 : 14,
+        drainsMana: true
+      });
+    }
+  } else if (ck === 'Berserker') {
+    f.vx = f.facing * (isEX ? 10 : 6.5);
+    match.specialEffects.push({
+      kind: 'berserker_quake', fighter: f, x: f.x + f.facing * 85, y: 560, facing: f.facing,
+      isEX, color: '#ef4444', subColor: '#64748b',
+      life: 28, maxLife: 28
+    });
+  }
+}
+
+function spawnParticles(x, y, color, count = 15) {
+  for (let i = 0; i < count; i++) {
+    match.particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 14,
+      vy: (Math.random() - 0.5) * 14 - 2,
+      color, life: 22 + Math.random() * 22,
+      size: 4 + Math.random() * 5
+    });
+  }
+}
+
+function update() {
+  globalTick++;
+  if (gameMode === 'menu') return;
+
+  if (match.hitstopTimer > 0) { match.hitstopTimer--; return; }
+  if (match.bannerTimer > 0) match.bannerTimer--;
+  if (match.shakeTimer > 0) match.shakeTimer--;
+  if (match.flashTimer > 0) match.flashTimer--;
+
+  match.particles.forEach(pt => { pt.x += pt.vx; pt.y += pt.vy; pt.life--; });
+  match.particles = match.particles.filter(pt => pt.life > 0);
+
+  match.specialEffects.forEach(fx => fx.life--);
+  match.specialEffects = match.specialEffects.filter(fx => fx.life > 0);
+
+  match.afterImages.forEach(ai => ai.alpha -= 0.045);
+  match.afterImages = match.afterImages.filter(ai => ai.alpha > 0);
+
+  if (match.state === 'cinematic') {
+    match.cinematicTimer--;
+    if (match.cinematicTimer <= 0) {
+      const atk = match.cinematicFighter;
+      const def = match.cinematicTarget;
+      const dmg = 260 * atk.dmgMult;
+      def.hp = Math.max(gameMode === 'training' ? 1 : 0, def.hp - dmg);
+      def.state = 'knockdown';
+      def.stateTimer = 48;
+      def.stateDuration = 48;
+      if (fxEnabled) { match.shakeTimer = 28; match.flashTimer = 16; }
+      spawnParticles(def.x, def.y - 75, atk.style.weaponGlow, 85);
+      match.state = 'fight';
+
+      if (def.hp <= 0 && gameMode !== 'training') {
+        const roundsNeeded = (atk.isP1 ? match.p1Rounds : match.p2Rounds) + 1;
+        if (roundsNeeded >= 2) {
+          spawnParticles(def.x, def.y - 60, '#38bdf8', 160);
+          announce(`FINALIZAÇÃO DE LENDA — ${atk.npName}!`, 160);
+        }
+      }
+    }
+    return;
+  }
+
+  if (match.state !== 'fight') return;
+
+  if (gameMode !== 'training') {
+    match.timerTick++;
+    if (match.timerTick >= 60) {
+      match.timerTick = 0;
+      if (match.timer > 0) match.timer--;
+      if (p2.baseKey === 'Eco' && match.timer % 10 === 0) {
+        p2.loadStyle(PLAYABLE_KEYS[Math.floor(Math.random() * PLAYABLE_KEYS.length)]);
+        announce(`ECO DO GRAAL ASSUMIU O ESTILO DE ${p2.charKey.toUpperCase()}!`, 55);
+      }
+    }
+  } else {
+    if (p2.state === 'idle' && p2.hp < p2.maxHp) p2.hp = Math.min(p2.maxHp, p2.hp + 8);
+    if (p2.hp <= 0) p2.hp = p2.maxHp;
+    if (p1.hp < p1.maxHp && p1.state === 'idle') p1.hp = Math.min(p1.maxHp, p1.hp + 8);
+    p1.mana = 3.0;
+    p1.seals = 3;
+    p1.usedSealThisRound = false;
+  }
+
+  if (p1.state === 'idle') p1.facing = p1.x < p2.x ? 1 : -1;
+  if (p2.state === 'idle') p2.facing = p2.x < p1.x ? 1 : -1;
+
+  updatePlayerInput(p1);
+  if (gameMode === 'versus' && versusP2IsHuman) {
+    updatePlayer2Input(p2);
+  } else {
+    updateAI(p2, p1);
+  }
+
+  updateFighterPhysics(p1, p2);
+  updateFighterPhysics(p2, p1);
+
+  for (let i = match.projectiles.length - 1; i >= 0; i--) {
+    const pr = match.projectiles[i];
+    pr.x += pr.vx;
+    pr.angle = (pr.angle || 0) + 0.35;
+    const target = pr.owner.isP1 ? p2 : p1;
+    if (Math.abs(pr.x - target.x) < 48 && Math.abs(pr.y - (target.y - 75)) < 80) {
+      applyHit(pr.owner, target, pr.dmg, 'mid', false, false, pr.drainsMana);
+      match.projectiles.splice(i, 1);
+    } else if (pr.x < -60 || pr.x > 1340) {
+      match.projectiles.splice(i, 1);
+    }
+  }
+
+  checkRoundEnd();
+}
+
+function updatePlayerInput(f) {
+  const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
+  const moveLeft = keys['KeyA'] || (gp && gp.axes[0] < -0.4);
+  const moveRight = keys['KeyD'] || (gp && gp.axes[0] > 0.4);
+  const crouch = keys['KeyS'] || (gp && gp.axes[1] > 0.4);
+  const jump = keys['KeyW'] || (gp && gp.axes[1] < -0.5);
+
+  if (gp) {
+    if (gp.buttons[0]?.pressed) triggerAttack(f, 'light');
+    if (gp.buttons[1]?.pressed) triggerAttack(f, 'medium');
+    if (gp.buttons[2]?.pressed) triggerAttack(f, 'heavy');
+    if (gp.buttons[3]?.pressed) triggerAttack(f, 'special');
+    if (gp.buttons[4]?.pressed) trySealHeal(f);
+    if (gp.buttons[5]?.pressed) triggerAttack(f, 'np');
+  }
+
+  f.crouching = crouch && f.y >= 560;
+  const holdingBack = (f.facing === 1 && moveLeft) || (f.facing === -1 && moveRight);
+  f.blocking = holdingBack ? (f.crouching ? 'crouch' : 'stand') : 'none';
+
+  if (f.state === 'idle') {
+    if (moveLeft && !f.crouching) f.vx = -f.speed;
+    else if (moveRight && !f.crouching) f.vx = f.speed;
+    else f.vx = 0;
+    if (jump && f.y >= 560) {
+      f.vy = -17.0;
+      f.triggerSquash(0.86, 1.16);
+    }
+  }
+}
+
+function updatePlayer2Input(f) {
+  const gp = navigator.getGamepads ? navigator.getGamepads()[1] : null;
+  const moveLeft = keys['ArrowLeft'] || (gp && gp.axes[0] < -0.4);
+  const moveRight = keys['ArrowRight'] || (gp && gp.axes[0] > 0.4);
+  const crouch = keys['ArrowDown'] || (gp && gp.axes[1] > 0.4);
+  const jump = keys['ArrowUp'] || (gp && gp.axes[1] < -0.5);
+
+  if (gp) {
+    if (gp.buttons[0]?.pressed) triggerAttack(f, 'light');
+    if (gp.buttons[1]?.pressed) triggerAttack(f, 'medium');
+    if (gp.buttons[2]?.pressed) triggerAttack(f, 'heavy');
+    if (gp.buttons[3]?.pressed) triggerAttack(f, 'special');
+    if (gp.buttons[4]?.pressed) trySealHeal(f);
+    if (gp.buttons[5]?.pressed) triggerAttack(f, 'np');
+  }
+
+  f.crouching = crouch && f.y >= 560;
+  const holdingBack = (f.facing === 1 && moveLeft) || (f.facing === -1 && moveRight);
+  f.blocking = holdingBack ? (f.crouching ? 'crouch' : 'stand') : 'none';
+
+  if (f.state === 'idle') {
+    if (moveLeft && !f.crouching) f.vx = -f.speed;
+    else if (moveRight && !f.crouching) f.vx = f.speed;
+    else f.vx = 0;
+    if (jump && f.y >= 560) {
+      f.vy = -17.0;
+      f.triggerSquash(0.86, 1.16);
+    }
+  }
+}
+
+function updateAI(ai, target) {
+  if (gameMode === 'training') {
+    ai.vx = 0;
+    if (trainingDummyMode === 'idle') { ai.blocking = 'none'; return; }
+    else if (trainingDummyMode === 'block') { ai.blocking = target.crouching ? 'crouch' : 'stand'; return; }
+  }
+
+  const dist = Math.abs(ai.x - target.x);
+
+  if (!ai.usedSealThisRound && ai.hp < 320 && ai.seals >= 1 && Math.random() < 0.03) trySealHeal(ai);
+  if (!ai.usedSealThisRound && ai.state === 'hitstun' && ai.comboHits >= 4 && ai.seals >= 2 && Math.random() < 0.08) trySealEscape(ai);
+
+  if (ai.state !== 'idle') return;
+
+  if (target.state === 'attack' && dist < 160 && Math.random() < 0.45) {
+    ai.blocking = Math.random() < 0.7 ? 'stand' : 'crouch';
+    ai.vx = 0;
+    return;
+  } else {
+    ai.blocking = 'none';
+  }
+
+  if (dist > ai.range - 10) {
+    ai.vx = ai.facing * ai.speed * 0.85;
+    if ((ai.charKey === 'Archer' || ai.charKey === 'Caster') && Math.random() < 0.035) triggerAttack(ai, 'special');
+  } else {
+    ai.vx = 0;
+    const r = Math.random();
+    if (ai.mana >= 3.0 && r < 0.06) triggerAttack(ai, 'np');
+    else if (ai.mana >= 1.0 && r < 0.09) triggerAttack(ai, 'ex');
+    else if (r < 0.14) triggerAttack(ai, 'special');
+    else if (r < 0.20) triggerAttack(ai, 'light');
+    else if (r < 0.26) triggerAttack(ai, 'medium');
+    else if (r < 0.30) triggerAttack(ai, 'heavy');
+    else if (r < 0.33) triggerAttack(ai, 'throw');
+  }
+}
+
+function updateFighterPhysics(f, opp) {
+  if (f.state === 'hitstun' && f.y < 560) {
+    f.airComboTime += 1 / 60;
+    if (f.airComboTime >= 2.2) {
+      f.state = 'idle'; f.comboHits = 0; f.airComboTime = 0;
+      announce('LIMITE DE COMBO AÉREO!', 40);
+    }
+  }
+
+  if (f.state === 'attack' && (f.attackType === 'heavy' || f.attackType === 'special' || f.attackType === 'ex' || f.attackType === 'np') && globalTick % 2 === 0) {
+    match.afterImages.push({
+      fighter: f, x: f.x, y: f.y, facing: f.facing,
+      canvasSnap: f.lastRenderedFrame || null,
+      alpha: f.attackType === 'heavy' ? 0.22 : 0.36
+    });
+  }
+
+  if (f.state === 'attack' && f.y >= 560) {
+    f.vx *= 0.84;
+  }
+
+  f.wasInAir = f.y < 560;
+  f.x += f.vx;
+  f.y += f.vy;
+  if (f.y < 560) {
+    f.vy += 0.85;
+  } else {
+    if (f.wasInAir) {
+      f.triggerSquash(1.14, 0.86);
+    }
+    f.y = 560;
+    f.vy = 0;
+  }
+
+  const minDist = 58;
+  if (Math.abs(f.x - opp.x) < minDist && Math.abs(f.y - opp.y) < 90) {
+    const push = (minDist - Math.abs(f.x - opp.x)) * 0.5;
+    if (f.x < opp.x) { f.x -= push; opp.x += push; }
+    else { f.x += push; opp.x -= push; }
+  }
+  f.x = Math.max(75, Math.min(1205, f.x));
+
+  if (f.state !== 'idle') {
+    f.stateTimer--;
+    if (f.state === 'attack' && !f.hasHit && f.stateTimer === Math.floor(f.stateDuration * 0.45)) {
+      checkMeleeHit(f, opp);
+    }
+    if (f.stateTimer <= 0) {
+      if (f.state === 'hitstun') { f.comboHits = 0; f.airComboTime = 0; }
+      f.state = 'idle';
+      f.attackType = null;
+      f.superArmor = false;
+      f.vx = 0;
+    }
+  }
+
+  f.updateAnimationState();
+}
+
+function checkMeleeHit(atk, def) {
+  const dist = Math.abs(atk.x - def.x);
+  let reach = atk.range;
+  if (atk.attackType === 'special' || atk.attackType === 'ex') {
+    reach = atk.range + (atk.attackType === 'ex' ? 65 : 38);
+  } else if (atk.attackType === 'np') {
+    reach = atk.charKey === 'Lancer' ? 140 : atk.charKey === 'Saber' ? 460 : 250;
+  }
+  if (dist > reach || Math.abs(atk.y - def.y) > 120) return;
+
+  atk.hasHit = true;
+  let height = 'mid', dmg = 45;
+  if (atk.attackType === 'light') { dmg = 40; height = atk.crouching ? 'low' : 'mid'; }
+  else if (atk.attackType === 'medium') { dmg = 65; height = atk.crouching ? 'low' : 'mid'; }
+  else if (atk.attackType === 'heavy') { dmg = 95; height = 'overhead'; }
+  else if (atk.attackType === 'special') { dmg = 85; height = 'mid'; }
+  else if (atk.attackType === 'ex') { dmg = 140; height = 'overhead'; }
+  else if (atk.attackType === 'throw') { dmg = 85; height = 'throw'; }
+  else if (atk.attackType === 'np') { dmg = 260; height = 'mid'; }
+
+  const isLauncher = (atk.attackType === 'heavy' || atk.attackType === 'ex');
+  const drainsMana = (atk.charKey === 'Caster' && (atk.attackType === 'special' || atk.attackType === 'ex'));
+  applyHit(atk, def, dmg * atk.dmgMult, height, atk.attackType === 'np', isLauncher, drainsMana);
+}
+
+function applyHit(atk, def, baseDmg, height, isNP, isLauncher, drainsMana = false) {
+  let blocked = false;
+  if (height !== 'throw' && def.state !== 'hitstun' && def.state !== 'attack') {
+    if (height === 'overhead' && def.blocking === 'stand') blocked = true;
+    else if (height === 'low' && def.blocking === 'crouch') blocked = true;
+    else if (height === 'mid' && def.blocking !== 'none') blocked = true;
+  }
+
+  if (blocked) {
+    def.addMana(0.18);
+    atk.addMana(0.08);
+    def.vx = -def.facing * 5.0;
+    def.triggerSquash(1.10, 0.92);
+    spawnParticles(def.x + def.facing * 20, def.y - 75, '#38bdf8', 10);
+    announce(isNP ? 'NOBRE FANTASMA DEFENDIDO!' : 'DEFESA!', 30);
+    return;
+  }
+
+  if (isNP) {
+    match.state = 'cinematic';
+    match.cinematicFighter = atk;
+    match.cinematicTarget = def;
+    match.cinematicText = `${atk.name.toUpperCase()} — ${atk.npName}!`;
+    match.cinematicTimer = 110;
+    match.cinematicMaxTimer = 110;
+    return;
+  }
+
+  if (def.superArmor) {
+    def.superArmor = false;
+    def.hp = Math.max(1, def.hp - baseDmg * 0.5);
+    announce('BERSERKER RESISTIU AO IMPACTO!', 40);
+    return;
+  }
+
+  def.comboHits++;
+  const scale = Math.max(0.25, 1.0 - (def.comboHits - 1) * 0.12);
+  const finalDmg = baseDmg * scale;
+
+  def.hp = Math.max(gameMode === 'training' ? 1 : 0, def.hp - finalDmg);
+  def.state = 'hitstun';
+  def.stateTimer = 22;
+  def.stateDuration = 22;
+  def.vx = -def.facing * 5.5;
+  def.triggerSquash(0.86, 1.14);
+  if (isLauncher && def.y >= 560) def.vy = -12.5;
+
+  atk.addMana(0.28);
+  def.addMana(0.10);
+
+  if (drainsMana) {
+    def.mana = Math.max(0, def.mana - 1.0);
+    match.specialEffects.push({
+      kind: 'rule_breaker_seal', x: def.x, y: def.y - 85, facing: atk.facing,
+      color: '#c084fc', subColor: '#ef4444', life: 26, maxLife: 26
+    });
+    announce('RULE BREAKER: -1 SEGMENTO DE MANA!', 55);
+  }
+
+  match.hitstopTimer = 4;
+  if (fxEnabled) match.shakeTimer = 8;
+  spawnParticles(def.x, def.y - 80, atk.style.weaponGlow, 22);
+}
+
+function checkRoundEnd() {
+  if (gameMode === 'training') return;
+
+  const p1Dead = p1.hp <= 0;
+  const p2Dead = p2.hp <= 0;
+  const timeOut = match.timer <= 0;
+  if (!p1Dead && !p2Dead && !timeOut) return;
+
+  match.state = 'ko';
+  const p1Pct = p1.hp / p1.maxHp;
+  const p2Pct = p2.hp / p2.maxHp;
+
+  if ((p1Dead && p2Dead) || (timeOut && Math.abs(p1Pct - p2Pct) < 0.001)) {
+    announce('EMPATE / NOCAUTE DUPLO! REPETINDO ROUND...', 120);
+    setTimeout(() => startRound(false), 2200);
+    return;
+  }
+
+  const p1WonRound = p2Dead || (timeOut && p1Pct > p2Pct);
+  if (p1WonRound) match.p1Rounds++;
+  else match.p2Rounds++;
+
+  if (match.p1Rounds >= 2 || match.p2Rounds >= 2) {
+    const winner = match.p1Rounds >= 2 ? p1 : p2;
+    announce(`VITÓRIA DA PARTIDA: ${winner.name.toUpperCase()}!`, 140);
+    setTimeout(() => handleMatchComplete(match.p1Rounds >= 2), 2500);
+  } else {
+    match.roundNum++;
+    announce(`FIM DO ROUND — PLACAR ${match.p1Rounds} x ${match.p2Rounds}`, 110);
+    setTimeout(() => startRound(true), 2200);
+  }
+}
+
+function handleMatchComplete(playerWon) {
+  if (gameMode === 'versus') {
+    const winnerName = match.p1Rounds >= 2 ? p1.name : p2.name;
+    showDialog('Fim do Confronto Versus', `Vitória de ${winnerName} por ${match.p1Rounds} a ${match.p2Rounds}!`, [
+      { label: 'Revanche Imediata', action: () => startMatch('versus') },
+      { label: 'Trocar Servos', action: () => openCharSelect('versus') },
+      { label: 'Menu Principal', action: () => showMenu('menu-main') }
+    ]);
+    return;
+  }
+  if (gameMode === 'campaign') {
+    const camp = CAMPAIGNS[campaignState.hero];
+    if (!playerWon) {
+      showDialog('Mestre', 'Fomos superados neste duelo, mas o progresso está salvo. Deseja tentar este confronto novamente?', [
+        { label: 'Tentar Novamente', action: () => launchCampaignFight() },
+        { label: 'Menu Principal', action: () => showMenu('menu-main') }
+      ]);
+      return;
+    }
+    campaignState.stage++;
+    if (campaignState.stage < camp.opponents.length) {
+      const nextOpp = camp.opponents[campaignState.stage];
+      const isBoss = nextOpp === 'Eco';
+      showDialog(campaignState.hero, isBoss
+        ? `Duelo Final (Chefe): O próprio Eco do Graal se manifestou no epicentro do eclipse!`
+        : `Vitória! Próximo adversário (${campaignState.stage + 1}/6): ${SERVANTS[nextOpp].name}.`, [
+        { label: 'Avançar para o Duelo', action: () => launchCampaignFight() }
+      ]);
+    } else {
+      showDialog(campaignState.hero, camp.choicePrompt, camp.choices.map(c => ({
+        label: c.label,
+        action: () => showDialog('Desfecho Desbloqueado', `${c.ending}\n\n[Recompensa Liberada: Ilustração de Final e Cor Alternativa do Eclipse]`, [
+          { label: 'Concluir Campanha', action: () => showMenu('menu-main') }
+        ])
+      })));
+    }
+  }
+}
+
+// ============================================================================
+// RENDERIZAÇÃO DE CENA E REPRODUTOR DE 24 QUADROS POR AÇÃO
+// ============================================================================
+function draw() {
+  ctx.save();
+
+  if (match.state === 'cinematic' && match.cinematicFighter) {
+    const cf = match.cinematicFighter;
+    const p = 1 - (match.cinematicTimer / match.cinematicMaxTimer);
+    const zoom = p < 0.35 ? 1.48 : 1.15;
+    ctx.translate(640, 360);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-cf.x * 0.65 - 640 * 0.35, -(cf.y - 110));
+  } else if (fxEnabled && match.shakeTimer > 0) {
+    ctx.translate((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14);
+  }
+
+  const sky = ctx.createLinearGradient(0, 0, 0, 720);
+  sky.addColorStop(0, '#070510');
+  sky.addColorStop(0.55, '#1d102b');
+  sky.addColorStop(1, '#0f172a');
+  ctx.fillStyle = sky;
+  ctx.fillRect(-400, -400, 2080, 1520);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(640, 195, 92, 0, Math.PI * 2);
+  ctx.fillStyle = '#040407';
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur = 50;
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = '#0f172a';
+  for (let x = 80; x < 1280; x += 220) {
+    ctx.fillRect(x, 340, 26, 220);
+    ctx.beginPath();
+    ctx.moveTo(x + 13, 340);
+    ctx.lineTo(x - 95, 560);
+    ctx.lineTo(x + 115, 560);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  const floor = ctx.createLinearGradient(0, 560, 0, 720);
+  floor.addColorStop(0, '#1e293b');
+  floor.addColorStop(1, '#090d16');
+  ctx.fillStyle = floor;
+  ctx.fillRect(-400, 560, 2080, 300);
+  ctx.strokeStyle = '#c89d54';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-400, 560); ctx.lineTo(1680, 560); ctx.stroke();
+
+  if (gameMode !== 'menu') {
+    if (match.state === 'cinematic' && match.cinematicFighter) {
+      drawNoblePhantasmCinematicBackdrop(match.cinematicFighter, match.cinematicTarget);
+    }
+
+    match.afterImages.forEach(ai => {
+      if (ai.canvasSnap) {
+        ctx.save();
+        ctx.globalAlpha = ai.alpha;
+        ctx.translate(ai.x, ai.y);
+        const sc = (ai.fighter.style.scale || 1.0) * (charCalib[ai.fighter.charKey]?.scale || 1.0);
+        ctx.scale(ai.facing * sc, sc);
+        ctx.filter = 'hue-rotate(30deg) brightness(1.5)';
+        ctx.drawImage(ai.canvasSnap, -PIVOT_X, -FOOT_Y);
+        ctx.restore();
+      }
+    });
+
+    drawServantFluid24(p1);
+    drawServantFluid24(p2);
+
+    drawSpecialEffectsLayer();
+
+    if (match.state === 'cinematic' && match.cinematicFighter) {
+      drawNoblePhantasmForegroundFX(match.cinematicFighter, match.cinematicTarget);
+    }
+
+    match.projectiles.forEach(pr => {
+      ctx.save();
+      ctx.translate(pr.x, pr.y);
+      const dir = pr.vx >= 0 ? 1 : -1;
+      ctx.scale(dir, 1);
+
+      if (pr.shape === 'wave') {
+        ctx.strokeStyle = pr.color;
+        ctx.shadowColor = pr.subColor;
+        ctx.shadowBlur = 18;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.arc(-10, 0, pr.radius, -1.1, 1.1);
+        ctx.stroke();
+      } else if (pr.shape === 'twin_blades') {
+        ctx.rotate(pr.angle);
+        for (let b = 0; b < 2; b++) {
+          ctx.rotate(Math.PI);
+          ctx.fillStyle = b === 0 ? '#f8fafc' : '#1e293b';
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(-22, -5);
+          ctx.quadraticCurveTo(10, -18, 28, 0);
+          ctx.lineTo(-22, 5);
+          ctx.closePath();
+          ctx.fill(); ctx.stroke();
+        }
+      } else if (pr.shape === 'caladbolg') {
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 20;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 3;
+        for (let r = -18; r <= 12; r += 10) {
+          ctx.beginPath(); ctx.ellipse(r, 0, 5, 14, 0, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(-36, -6); ctx.lineTo(36, 0); ctx.lineTo(-36, 6); ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.shadowColor = pr.color;
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = pr.color;
+        ctx.beginPath(); ctx.arc(0, 0, pr.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = pr.subColor || '#fff';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(-pr.radius * 0.7, -pr.radius * 0.7, pr.radius * 1.4, pr.radius * 1.4);
+      }
+      ctx.restore();
+    });
+
+    match.particles.forEach(pt => {
+      ctx.fillStyle = pt.color;
+      ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
+    });
+  }
+
+  ctx.restore();
+
+  if (gameMode !== 'menu') {
+    drawHUD();
+
+    if (match.state === 'cinematic') {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.84)';
+      ctx.fillRect(0, 560, 1280, 110);
+      ctx.strokeStyle = match.cinematicFighter.style.weaponGlow;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(0, 560, 1280, 110);
+      ctx.fillStyle = '#fde047';
+      ctx.font = 'italic bold 40px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(match.cinematicText, 640, 628);
+    }
+
+    if (fxEnabled && match.flashTimer > 0) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fillRect(0, 0, 1280, 720);
+    }
+  }
+}
+
+function drawServantFluid24(f) {
+  const s = f.style;
+  const cal = charCalib[f.charKey] || { scale: 1.0, offX: 0, offY: 0 };
+
+  ctx.fillStyle = 'rgba(0,0,0,0.48)';
+  ctx.beginPath();
+  ctx.ellipse(f.x, 560, 42 * s.scale * f.squashX, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (f.exAuraTimer > 0) {
+    ctx.save();
+    ctx.translate(f.x, f.y - 88);
+    ctx.strokeStyle = '#fde047';
+    ctx.shadowColor = '#fde047';
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 48 * s.scale, 95 * s.scale, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const atkRows  = attackSpriteAtlas[f.charKey];
+  const baseRows = spriteAtlas[f.charKey] || preBakedAtlas[f.charKey];
+  const isCustomSheet = !!spriteAtlas[f.charKey];
+
+  const sample = sample24FrameAction(f, atkRows, baseRows, isCustomSheet);
+
+  if (sample.primary) {
+    f.lastRenderedFrame = sample.primary;
+    const baseScale = (s.scale || 1.0) * cal.scale;
+    const finalSX = baseScale * f.squashX;
+    const finalSY = baseScale * f.squashY;
+
+    ctx.save();
+    ctx.translate(f.x + f.facing * cal.offX, f.y + cal.offY);
+    if (f.state === 'knockdown') {
+      ctx.translate(0, -25);
+      ctx.rotate(-f.facing * Math.PI / 2);
+    } else if (Math.abs(f.dynamicLean) > 0.002) {
+      ctx.rotate(f.facing * f.dynamicLean);
+    }
+
+    ctx.scale(f.facing * finalSX, finalSY);
+
+    if (fluidInterpEnabled && f.stateTransitionFrame && f.stateTransitionAlpha > 0.02) {
+      ctx.save();
+      ctx.globalAlpha = f.stateTransitionAlpha;
+      ctx.drawImage(f.stateTransitionFrame, -PIVOT_X, -FOOT_Y);
+      ctx.restore();
+    }
+
+    ctx.drawImage(sample.primary, -PIVOT_X, -FOOT_Y);
+
+    if (fluidInterpEnabled && sample.secondary && sample.blend > 0.05 && sample.secondary !== sample.primary) {
+      ctx.save();
+      ctx.globalAlpha = sample.blend * 0.55;
+      ctx.drawImage(sample.secondary, -PIVOT_X, -FOOT_Y);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  if (f.blocking !== 'none') {
+    ctx.save();
+    ctx.translate(f.x, f.y - (f.crouching ? 55 : 85));
+    ctx.scale(f.facing, 1);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.22)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(26, 0, 50, -Math.PI * 0.45, Math.PI * 0.45);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  const nameY = f.y - (f.crouching ? 145 : 192) * s.scale;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(f.name, f.x, nameY);
+
+  if (f.comboHits > 1) {
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'italic bold 22px sans-serif';
+    ctx.fillText(`${f.comboHits} HITS!`, f.x, nameY - 24);
+  }
+}
+
+// Seleciona entre os 24 quadros de cada ação!
+function sample24FrameAction(f, atkRows, baseRows, isCustomSheet) {
+  // 1. Folha dedicada de ataques (4 linhas x 24 quadros)
+  if (f.state === 'attack' && atkRows && atkRows[0]?.length > 0) {
+    let rIdx = 0;
+    if (f.attackType === 'light' || f.attackType === 'throw') rIdx = 0;
+    else if (f.attackType === 'medium') rIdx = 1;
+    else if (f.attackType === 'heavy') rIdx = 2;
+    else rIdx = 3;
+
+    const row = (atkRows[rIdx] && atkRows[rIdx].length > 0) ? atkRows[rIdx] : atkRows[0];
+    const total = row.length; // 24 quadros
+    const rawP = Math.max(0, Math.min(0.999, 1 - (f.stateTimer / Math.max(1, f.stateDuration))));
+    const easedP = easeOutCubic(rawP);
+    const exactPos = easedP * (total - 1);
+    const idx1 = Math.floor(exactPos);
+    const idx2 = Math.min(total - 1, idx1 + 1);
+    return { primary: row[idx1], secondary: row[idx2], blend: exactPos - idx1 };
+  }
+
+  if (!baseRows) return { primary: null, secondary: null, blend: 0 };
+
+  let rowIdx = f.animRow;
+  if (!baseRows[rowIdx] || baseRows[rowIdx].length === 0) rowIdx = 0;
+  const row = baseRows[rowIdx];
+  const total = row.length; // 24 quadros por linha!
+
+  // 2. Ataque usando os 24 quadros da Linha de Combate
+  if (f.state === 'attack') {
+    const rawP = Math.max(0, Math.min(0.999, 1 - (f.stateTimer / Math.max(1, f.stateDuration))));
+    const easedP = easeOutCubic(rawP);
+
+    if (!isCustomSheet && total >= 24) {
+      // No Atlas Nativo de 24 quadros, cada tipo de ataque tem 6 quadros exclusivos (0..5, 6..11, 12..17, 18..23)
+      let group = 0;
+      if (f.attackType === 'medium') group = 1;
+      else if (f.attackType === 'heavy') group = 2;
+      else if (f.attackType === 'special' || f.attackType === 'ex' || f.attackType === 'np') group = 3;
+
+      const startF = group * 6;
+      const exactPos = startF + easedP * 5.0;
+      const idx1 = Math.min(total - 1, Math.floor(exactPos));
+      const idx2 = Math.min(startF + 5, idx1 + 1);
+      return { primary: baseRows[2][idx1], secondary: baseRows[2][idx2], blend: exactPos - idx1 };
+    } else {
+      // Na Folha Mestra expandida para 24 quadros, percorre todos os 24 quadros da ação!
+      const exactPos = easedP * (total - 1);
+      const idx1 = Math.floor(exactPos);
+      const idx2 = Math.min(total - 1, idx1 + 1);
+      return { primary: row[idx1], secondary: row[idx2], blend: exactPos - idx1 };
+    }
+  }
+
+  // 3. Defesa ou Hitstun (24 quadros na Linha 3)
+  if (f.blocking !== 'none' || f.state === 'hitstun') {
+    const startF = f.state === 'hitstun' ? Math.floor(total * 0.5) : 0;
+    const span = Math.max(1, Math.floor(total * 0.5));
+    const exactPos = startF + ((f.animTimer * 0.35) % span);
+    const idx1 = Math.min(total - 1, Math.floor(exactPos));
+    const idx2 = Math.min(total - 1, idx1 + 1);
+    return { primary: row[idx1], secondary: row[idx2], blend: exactPos - idx1 };
+  }
+
+  // 4. Idle (24 quadros contínuos a 24 FPS)
+  if (rowIdx === 0) {
+    const exactPos = (f.animTimer * 0.40) % total; // 24 FPS em um loop de 60 Hz (24/60 = 0.40)
+    const idx1 = Math.floor(exactPos);
+    const idx2 = (idx1 + 1) % total;
+    return { primary: row[idx1], secondary: row[idx2], blend: exactPos - idx1 };
+  }
+
+  // 5. Corrida / Dash (24 quadros contínuos)
+  const exactPos = (f.animTimer * 0.55) % total;
+  const idx1 = Math.floor(exactPos);
+  const idx2 = (idx1 + 1) % total;
+  return { primary: row[idx1], secondary: row[idx2], blend: exactPos - idx1 };
+}
+
+function drawSpecialEffectsLayer() {
+  match.specialEffects.forEach(fx => {
+    const p = 1 - (fx.life / fx.maxLife);
+    const alpha = fx.life / fx.maxLife;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    if (fx.kind === 'mana_burst') {
+      ctx.translate(fx.x, fx.y);
+      ctx.strokeStyle = fx.color;
+      ctx.lineWidth = 6 * alpha;
+      ctx.beginPath();
+      ctx.arc(0, 0, 25 + p * 95, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = fx.color;
+      ctx.globalAlpha = alpha * 0.35;
+      ctx.fillRect(-38 * alpha, -160, 76 * alpha, 240);
+    }
+    else if (fx.kind === 'saber_wind_slash') {
+      const f = fx.fighter;
+      ctx.translate(f.x + f.facing * 45, f.y - 88);
+      ctx.scale(f.facing, 1);
+      ctx.shadowColor = fx.color;
+      ctx.shadowBlur = 22;
+      for (let i = 0; i < (fx.isEX ? 3 : 2); i++) {
+        ctx.strokeStyle = i % 2 === 0 ? fx.color : fx.subColor;
+        ctx.lineWidth = (fx.isEX ? 18 : 12) * alpha;
+        ctx.beginPath();
+        ctx.arc(10 + i * 18, 0, 75 + p * 45 + i * 14, -1.25 + p * 0.4, 1.25 - p * 0.2);
+        ctx.stroke();
+      }
+    }
+    else if (fx.kind === 'lancer_barrage') {
+      const f = fx.fighter;
+      ctx.translate(f.x + f.facing * 35, f.y - 85);
+      ctx.scale(f.facing, 1);
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 20;
+      const count = fx.isEX ? 6 : 3;
+      for (let i = 0; i < count; i++) {
+        const yOff = (i - (count - 1) / 2) * 18;
+        const reach = 135 + (i % 2) * 35 + p * 45;
+        ctx.strokeStyle = i % 2 === 0 ? '#ef4444' : '#fca5a5';
+        ctx.lineWidth = fx.isEX ? 8 : 6;
+        ctx.beginPath();
+        ctx.moveTo(0, yOff * 0.3);
+        ctx.lineTo(reach, yOff);
+        ctx.stroke();
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(reach - 18, yOff - 7);
+        ctx.lineTo(reach + 16, yOff);
+        ctx.lineTo(reach - 18, yOff + 7);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    else if (fx.kind === 'archer_trace') {
+      const f = fx.fighter;
+      ctx.translate(f.x + f.facing * 30, f.y - 85);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.rotate(p * Math.PI);
+      ctx.strokeRect(-38, -38, 76, 76);
+      ctx.rotate(Math.PI / 4);
+      ctx.strokeRect(-38, -38, 76, 76);
+    }
+    else if (fx.kind === 'rider_chains') {
+      const f = fx.fighter;
+      ctx.translate(f.x, f.y - 80);
+      ctx.scale(f.facing, 1);
+      ctx.strokeStyle = fx.color;
+      ctx.shadowColor = fx.subColor;
+      ctx.shadowBlur = 18;
+      ctx.lineWidth = fx.isEX ? 6 : 4;
+      for (let c = 0; c < (fx.isEX ? 3 : 2); c++) {
+        ctx.beginPath();
+        for (let x = -20; x <= 145; x += 12) {
+          const waveY = Math.sin((x * 0.08) + p * 10 + c * 2) * (fx.isEX ? 28 : 16);
+          if (x === -20) ctx.moveTo(x, waveY);
+          else ctx.lineTo(x, waveY);
+        }
+        ctx.stroke();
+      }
+    }
+    else if (fx.kind === 'caster_sigil') {
+      ctx.translate(fx.x, fx.y);
+      ctx.shadowColor = fx.color;
+      ctx.shadowBlur = 22;
+      ctx.strokeStyle = fx.color;
+      ctx.lineWidth = 4;
+      const rad = (fx.isEX ? 58 : 42) * (0.7 + p * 0.4);
+      ctx.beginPath(); ctx.arc(0, 0, rad, 0, Math.PI * 2); ctx.stroke();
+      ctx.rotate(p * 3);
+      ctx.strokeStyle = fx.subColor;
+      ctx.strokeRect(-rad * 0.7, -rad * 0.7, rad * 1.4, rad * 1.4);
+      ctx.rotate(Math.PI / 4);
+      ctx.strokeRect(-rad * 0.7, -rad * 0.7, rad * 1.4, rad * 1.4);
+    }
+    else if (fx.kind === 'rule_breaker_seal') {
+      ctx.translate(fx.x, fx.y);
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(-45, -45); ctx.lineTo(45, 45);
+      ctx.moveTo(45, -45); ctx.lineTo(-45, 45);
+      ctx.stroke();
+    }
+    else if (fx.kind === 'berserker_quake') {
+      ctx.translate(fx.x, fx.y);
+      ctx.scale(fx.facing, 1);
+      const rocks = fx.isEX ? 5 : 3;
+      for (let i = 0; i < rocks; i++) {
+        const rx = i * 36;
+        const rh = (55 + i * 16) * Math.sin(p * Math.PI);
+        ctx.fillStyle = '#475569';
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(rx - 18, 0);
+        ctx.lineTo(rx, -rh);
+        ctx.lineTo(rx + 18, 0);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  });
+}
+
+function drawNoblePhantasmCinematicBackdrop(atk, def) {
+  const ck = atk.charKey;
+  ctx.save();
+  ctx.fillStyle = 'rgba(4, 4, 12, 0.78)';
+  ctx.fillRect(-400, -400, 2080, 1520);
+
+  if (ck === 'Archer') {
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.45)';
+    ctx.lineWidth = 6;
+    for (let g = 0; g < 3; g++) {
+      ctx.save();
+      ctx.translate(320 + g * 320, 200 + (g % 2) * 50);
+      ctx.rotate(globalTick * 0.02 * (g % 2 === 0 ? 1 : -1));
+      ctx.beginPath(); ctx.arc(0, 0, 75 + g * 15, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeRect(-55, -55, 110, 110);
+      ctx.restore();
+    }
+    for (let s = 100; s < 1200; s += 65) {
+      ctx.save();
+      ctx.translate(s, 560);
+      ctx.rotate(((s % 5) - 2) * 0.12);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(-3, -75, 6, 75);
+      ctx.fillStyle = '#b91c1c';
+      ctx.fillRect(-12, -55, 24, 5);
+      ctx.restore();
+    }
+  } else {
+    ctx.strokeStyle = atk.style.weaponGlow;
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 28; i++) {
+      const ly = (i * 35 + globalTick * 22) % 720;
+      ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(1280, ly - 35); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawNoblePhantasmForegroundFX(atk, def) {
+  const ck = atk.charKey;
+  const p = 1 - (match.cinematicTimer / match.cinematicMaxTimer);
+  if (p < 0.32) return;
+
+  const beamP = (p - 0.32) / 0.68;
+  ctx.save();
+
+  if (ck === 'Saber' || ck === 'Eco') {
+    ctx.translate(atk.x + atk.facing * 45, atk.y - 92);
+    ctx.scale(atk.facing, 1);
+    const beamH = 120 * Math.sin(beamP * Math.PI);
+    ctx.shadowColor = '#fde047';
+    ctx.shadowBlur = 35;
+    ctx.fillStyle = ck === 'Eco' ? '#ef4444' : '#38bdf8';
+    ctx.fillRect(0, -beamH * 0.7, 1100, beamH * 1.4);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(0, -beamH * 0.45, 1100, beamH * 0.9);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, -beamH * 0.2, 1100, beamH * 0.4);
+  }
+  else if (ck === 'Lancer') {
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 30;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 14 * (1 - beamP * 0.5);
+    ctx.beginPath();
+    ctx.moveTo(atk.x, atk.y - 110);
+    ctx.lineTo((atk.x + def.x) / 2, atk.y - 240);
+    ctx.lineTo(def.x, def.y - 85);
+    ctx.stroke();
+
+    ctx.translate(def.x, def.y - 85);
+    ctx.fillStyle = '#dc2626';
+    for (let a = 0; a < 8; a++) {
+      ctx.rotate(Math.PI / 4);
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.lineTo(14, -95 * Math.sin(beamP * Math.PI)); ctx.lineTo(-14, -95 * Math.sin(beamP * Math.PI));
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  else if (ck === 'Archer') {
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 18;
+    for (let i = 0; i < 12; i++) {
+      const sx = def.x + ((i % 5) - 2) * 35;
+      const sy = (def.y - 380) + ((beamP * 520 + i * 45) % 360);
+      ctx.fillStyle = i % 2 === 0 ? '#e2e8f0' : '#ef4444';
+      ctx.fillRect(sx - 4, sy - 65, 8, 65);
+    }
+  }
+  else if (ck === 'Rider') {
+    ctx.translate(def.x, def.y - 90);
+    ctx.shadowColor = '#c084fc';
+    ctx.shadowBlur = 35;
+    ctx.strokeStyle = '#f8fafc';
+    ctx.lineWidth = 22 * Math.sin(beamP * Math.PI);
+    ctx.beginPath();
+    ctx.arc(0, 0, 110 * beamP, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  else if (ck === 'Caster') {
+    ctx.translate(def.x, def.y - 90);
+    ctx.shadowColor = '#c084fc';
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = 'rgba(192, 132, 252, 0.55)';
+    const w = 95 * Math.sin(beamP * Math.PI);
+    ctx.fillRect(-w, -350, w * 2, 450);
+  }
+  else if (ck === 'Berserker') {
+    ctx.translate(def.x, def.y - 90);
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 25;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 10;
+    const slashes = Math.floor(beamP * 9) + 1;
+    for (let s = 0; s < slashes; s++) {
+      ctx.save();
+      ctx.rotate(s * 0.7);
+      ctx.beginPath(); ctx.moveTo(-140, 0); ctx.lineTo(140, 0); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawBufferedWeapon(oc, f, s) {
+  const isAtk = f.state === 'attack';
+  if (s.weaponType === 'sword') {
+    oc.fillStyle = '#1e3a8a';
+    oc.fillRect(-3, -10, 6, 20);
+    oc.fillStyle = isAtk ? s.weaponGlow : s.weaponColor;
+    oc.beginPath(); oc.moveTo(3, -5); oc.lineTo(74, 0); oc.lineTo(3, 5); oc.closePath(); oc.fill();
+  } else if (s.weaponType === 'spear') {
+    oc.fillStyle = '#991b1b';
+    oc.fillRect(-20, -3, 108, 6);
+    oc.fillStyle = s.weaponGlow;
+    oc.beginPath(); oc.moveTo(88, -7); oc.lineTo(112, 0); oc.lineTo(88, 7); oc.closePath(); oc.fill();
+  } else if (s.weaponType === 'dual') {
+    oc.fillStyle = '#e2e8f0';
+    oc.beginPath(); oc.moveTo(0, -4); oc.quadraticCurveTo(30, -12, 54, -2); oc.lineTo(0, 4); oc.closePath(); oc.fill();
+  } else if (s.weaponType === 'dagger') {
+    oc.fillStyle = s.weaponColor;
+    oc.beginPath(); oc.moveTo(10, -6); oc.lineTo(48, 0); oc.lineTo(10, 6); oc.closePath(); oc.fill();
+  } else if (s.weaponType === 'staff') {
+    oc.fillStyle = '#c084fc';
+    oc.beginPath(); oc.moveTo(0, -5); oc.lineTo(34, 0); oc.lineTo(0, 5); oc.closePath(); oc.fill();
+    oc.fillStyle = '#38bdf8';
+    oc.beginPath(); oc.arc(44, -4, 8, 0, Math.PI * 2); oc.fill();
+  } else if (s.weaponType === 'greataxe') {
+    oc.fillStyle = '#475569';
+    oc.fillRect(0, -12, 82, 24);
+  }
+}
+
+function drawHUD() {
+  drawHealthBar(60, 35, 480, 28, p1.hp / p1.maxHp, p1.name, p1.seals, p1.usedSealThisRound, match.p1Rounds, true);
+  drawHealthBar(740, 35, 480, 28, p2.hp / p2.maxHp, p2.name, p2.seals, p2.usedSealThisRound, match.p2Rounds, false);
+
+  ctx.fillStyle = '#090d1a';
+  ctx.strokeStyle = '#f5d17f';
+  ctx.lineWidth = 3;
+  ctx.fillRect(590, 22, 100, 56);
+  ctx.strokeRect(590, 22, 100, 56);
+  ctx.fillStyle = '#fde047';
+  ctx.font = 'bold 34px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(gameMode === 'training' ? '∞' : match.timer, 640, 62);
+
+  drawManaBar(60, 650, p1.mana, true);
+  drawManaBar(860, 650, p2.mana, false);
+
+  if (match.bannerTimer > 0) {
+    ctx.fillStyle = 'rgba(6, 9, 20, 0.88)';
+    ctx.fillRect(240, 175, 800, 58);
+    ctx.strokeStyle = '#f5d17f';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(240, 175, 800, 58);
+    ctx.fillStyle = '#fde047';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(match.bannerText, 640, 212);
+  }
+}
+
+function drawHealthBar(x, y, w, h, pct, name, seals, sealUsed, roundsWon, isLeft) {
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+  ctx.fillRect(x, y, w, h);
+
+  const grad = ctx.createLinearGradient(x, y, x + w, y);
+  if (pct > 0.3) {
+    grad.addColorStop(0, '#10b981');
+    grad.addColorStop(1, '#22c55e');
+  } else {
+    grad.addColorStop(0, '#e11d48');
+    grad.addColorStop(1, '#f43f5e');
+  }
+  ctx.fillStyle = grad;
+  const fillW = w * Math.max(0, pct);
+  ctx.fillRect(isLeft ? x : x + (w - fillW), y, fillW, h);
+
+  ctx.strokeStyle = '#f5d17f';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = isLeft ? 'left' : 'right';
+  ctx.fillText(`${name}  [Vitórias: ${roundsWon}/2]`, isLeft ? x : x + w, y - 8);
+
+  const sealText = `Selos de Comando: ${'◆'.repeat(seals)}${'◇'.repeat(3 - seals)} ${sealUsed ? '(Usado no Round)' : ''}`;
+  ctx.fillStyle = '#fb7185';
+  ctx.font = 'bold 13.5px sans-serif';
+  ctx.fillText(sealText, isLeft ? x : x + w, y + h + 20);
+}
+
+function drawManaBar(x, y, mana, isLeft) {
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = 'bold 13.5px sans-serif';
+  ctx.textAlign = isLeft ? 'left' : 'right';
+  ctx.fillText(`MANA (${Math.floor(mana)}/3 SEGMENTOS)`, isLeft ? x : x + 360, y - 8);
+
+  for (let i = 0; i < 3; i++) {
+    const segX = x + i * 122;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    ctx.fillRect(segX, y, 116, 20);
+    const segFill = Math.max(0, Math.min(1, mana - i));
+    ctx.fillStyle = mana >= 3 ? '#facc15' : '#38bdf8';
+    ctx.fillRect(segX, y, 116 * segFill, 20);
+    ctx.strokeStyle = '#f5d17f';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(segX, y, 116, 20);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
